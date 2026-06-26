@@ -93,6 +93,9 @@ label {
   gap: 4px;
   font-size: 0.85rem;
   color: var(--ink);
+  /* Allow the label (a grid item) to shrink so its input can't push the
+     column wider than its track. */
+  min-width: 0;
 }
 label.full {
   grid-column: 1 / -1;
@@ -101,8 +104,12 @@ label.full {
 input,
 select {
   font: inherit;
-  font-size: 0.95rem;
-  padding: 8px 10px;
+  /* 16px keeps iOS Safari from auto-zooming the page when a field is focused. */
+  font-size: 16px;
+  /* Fill the grid cell instead of keeping the control's intrinsic (size-based)
+     width, which otherwise overflows the column. */
+  width: 100%;
+  padding: 9px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #fff;
@@ -327,6 +334,41 @@ select:focus {
   }
   .app-header {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phone-sized screens. */
+@media (max-width: 560px) {
+  .app {
+    padding: 16px 12px 36px;
+  }
+  .app-header h1 {
+    font-size: 1.35rem;
+  }
+  .subtitle {
+    font-size: 0.9rem;
+  }
+  .panel {
+    padding: 14px;
+  }
+  .print-btn {
+    width: 100%;
+  }
+  /* Four metrics are too tight on a phone; show two per row. */
+  .result-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  /* Slightly larger SVG labels so they stay legible once the plot scales down. */
+  .rxc-plot .tick {
+    font-size: 13px;
+  }
+  .rxc-plot .pole,
+  .rxc-plot .legend,
+  .rxc-plot .point-label {
+    font-size: 13px;
+  }
+  .rxc-plot .axis-title {
+    font-size: 15px;
   }
 }
 

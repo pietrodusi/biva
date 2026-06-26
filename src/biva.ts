@@ -165,25 +165,6 @@ export function ellipsePoints(ref: RefParams, k: number, steps = 160): Array<[nu
   return pts;
 }
 
-/** Endpoints of the major and minor axes of the k-scaled ellipse (for drawing). */
-export function ellipseAxes(ref: RefParams, k: number) {
-  const { a, b, c } = covariance(ref);
-  const { l1, l2, v1, v2 } = eigenSym2(a, b, c);
-  const s1 = k * Math.sqrt(Math.max(0, l1));
-  const s2 = k * Math.sqrt(Math.max(0, l2));
-  const mean: [number, number] = [ref.meanRH, ref.meanXcH];
-  return {
-    major: [
-      [mean[0] - s1 * v1[0], mean[1] - s1 * v1[1]],
-      [mean[0] + s1 * v1[0], mean[1] + s1 * v1[1]],
-    ] as [number, number][],
-    minor: [
-      [mean[0] - s2 * v2[0], mean[1] - s2 * v2[1]],
-      [mean[0] + s2 * v2[0], mean[1] + s2 * v2[1]],
-    ] as [number, number][],
-  };
-}
-
 /** Phase angle (degrees) = arctan(Xc / R). Uses raw R and Xc (height cancels). */
 export function phaseAngleDeg(R: number, Xc: number): number {
   return (Math.atan2(Xc, R) * 180) / Math.PI;

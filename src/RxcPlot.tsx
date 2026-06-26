@@ -1,4 +1,4 @@
-import { LEVELS, ellipsePoints, ellipseAxes, type RefParams, type Vector } from "./biva";
+import { LEVELS, ellipsePoints, eigenSym2, covariance, type RefParams, type Vector } from "./biva";
 
 interface Props {
   ref95: RefParams;
@@ -36,35 +36,28 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
 
-  // Build all three ellipses and the 95% axes once.
+  // Build all three ellipses once.
   const ellipses = LEVELS.map((lvl) => ({ ...lvl, pts: ellipsePoints(ref95, lvl.k) }));
-  const axes = ellipseAxes(ref95, LEVELS[2].k); // major/minor of the 95% ellipse
 
-  // Data bounds: driven by the 95% ellipse, expanded to include the patient
-  // point, then padded so nothing touches the frame.
-  const outer = ellipses[2].pts;
-  let xMin = Infinity,
-    xMax = -Infinity,
-    yMin = Infinity,
-    yMax = -Infinity;
-  for (const [x, y] of outer) {
-    xMin = Math.min(xMin, x);
-    xMax = Math.max(xMax, x);
-    yMin = Math.min(yMin, y);
-    yMax = Math.max(yMax, y);
-  }
+  // Fixed "classic BIVA" axis ranges (R/H 100–500, Xc/H 10–50), matching the
+  // scale of the published Campa RXc figures. This locks the plot's aspect ratio
+  // so the ellipse's on-screen shape and orientation stay stable and paper-like
+  // instead of re-fitting — and re-rotating — with every change of values.
+  //
+  // The frame only ever GROWS beyond the standard range (rounded to a tick) if
+  // an unusually large/eccentric ellipse or patient point would otherwise be
+  // clipped (e.g. the older-adult female reference, whose 95% ellipse reaches
+  // ~520 Ω/m on R/H).
+  const xs = ellipses[2].pts.map((p) => p[0]);
+  const ys = ellipses[2].pts.map((p) => p[1]);
   if (point) {
-    xMin = Math.min(xMin, point.rh);
-    xMax = Math.max(xMax, point.rh);
-    yMin = Math.min(yMin, point.xch);
-    yMax = Math.max(yMax, point.xch);
+    xs.push(point.rh);
+    ys.push(point.xch);
   }
-  const padX = (xMax - xMin) * 0.12 || 10;
-  const padY = (yMax - yMin) * 0.12 || 10;
-  xMin -= padX;
-  xMax += padX;
-  yMin -= padY;
-  yMax += padY;
+  const xMin = Math.min(100, Math.floor(Math.min(...xs) / 100) * 100);
+  const xMax = Math.max(500, Math.ceil(Math.max(...xs) / 100) * 100);
+  const yMin = Math.min(10, Math.floor(Math.min(...ys) / 10) * 10);
+  const yMax = Math.max(50, Math.ceil(Math.max(...ys) / 10) * 10);
 
   // Data -> screen mapping (note the y-axis flip: SVG y grows downward).
   const sx = (x: number) => M.left + ((x - xMin) / (xMax - xMin)) * plotW;
@@ -73,18 +66,50 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
   const toPath = (pts: Array<[number, number]>) =>
     pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${sx(x).toFixed(2)},${sy(y).toFixed(2)}`).join(" ") + " Z";
 
-  const xticks = niceTicks(xMin, xMax);
-  const yticks = niceTicks(yMin, yMax);
+  const xticks = niceTicks(xMin, xMax, 4); // ~100 Ω/m steps, like the paper
+  const yticks = niceTicks(yMin, yMax, 4); // ~10 Ω/m steps, like the paper
 
-  // Endpoints of the interpretation axes, with a little overshoot for labels.
-  const ext = (p: [number, number], q: [number, number], f: number): [number, number] => [
-    q[0] + (q[0] - p[0]) * f,
-    q[1] + (q[1] - p[1]) * f,
+  // Interpretation axes, drawn to follow the ellipse AS DISPLAYED.
+  //
+  // The covariance eigenvectors live in data units (Ω/m); the plot scales R/H
+  // and Xc/H by different amounts, so mapping those data-space axes to screen
+  // would NOT line them up with the long/short directions of the rendered
+  // ellipse. Instead we build the covariance of the ON-SCREEN ellipse and take
+  // its principal axes, so the drawn cross lies along the ellipse you see.
+  //
+  // A point's screen offset from the centre is (SX*dx, -SY*dy), so the screen
+  // covariance is  A·Σ·Aᵀ  with  A = diag(SX, -SY).
+  const SX = plotW / (xMax - xMin);
+  const SY = plotH / (yMax - yMin);
+  const { a, b, c } = covariance(ref95);
+  const screenEig = eigenSym2(SX * SX * a, -SX * SY * b, SY * SY * c);
+  const k95 = LEVELS[2].k;
+  const cxp = sx(ref95.meanRH);
+  const cyp = sy(ref95.meanXcH);
+
+  // Orient each axis to point rightward on screen so the +end is the right pole.
+  const orientRight = (v: [number, number]): [number, number] =>
+    v[0] >= 0 ? v : [-v[0], -v[1]];
+  const uMaj = orientRight(screenEig.v1); // major: up-right (dehydration) <-> down-left
+  const uMin = orientRight(screenEig.v2); // minor: down-right (less cell mass) <-> up-left
+  const semiMaj = k95 * Math.sqrt(Math.max(0, screenEig.l1));
+  const semiMin = k95 * Math.sqrt(Math.max(0, screenEig.l2));
+
+  // Endpoints (in screen px); LAB extends a touch further for the labels.
+  const along = (u: [number, number], len: number): [number, number] => [
+    cxp + u[0] * len,
+    cyp + u[1] * len,
   ];
-  const majTop = ext(axes.major[0], axes.major[1], 0.06);
-  const majBot = ext(axes.major[1], axes.major[0], 0.06);
-  const minRight = axes.minor[0][0] > axes.minor[1][0] ? axes.minor[0] : axes.minor[1];
-  const minLeft = axes.minor[0][0] > axes.minor[1][0] ? axes.minor[1] : axes.minor[0];
+  const majDehydr = along(uMaj, semiMaj);
+  const majOver = along(uMaj, -semiMaj);
+  const minLess = along(uMin, semiMin);
+  const minMore = along(uMin, -semiMin);
+  // Labels sit a little beyond each axis tip (which is on the 95% ellipse) and
+  // are anchored AWAY from the ellipse so the whole word clears the curve.
+  const majDehydrLab = along(uMaj, semiMaj + 12);
+  const majOverLab = along(uMaj, -semiMaj - 12);
+  const minLessLab = along(uMin, semiMin + 12);
+  const minMoreLab = along(uMin, -semiMin - 12);
 
   return (
     <svg
@@ -131,33 +156,34 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
         Xc/H (Ω/m)
       </text>
 
-      {/* Interpretation axes of the 95% ellipse (dashed) + pole labels */}
+      {/* Interpretation axes of the 95% ellipse, aligned to the displayed
+          ellipse's visual major/minor directions (dashed) + pole labels. */}
       <line
-        x1={sx(majBot[0])}
-        y1={sy(majBot[1])}
-        x2={sx(majTop[0])}
-        y2={sy(majTop[1])}
+        x1={majOver[0]}
+        y1={majOver[1]}
+        x2={majDehydr[0]}
+        y2={majDehydr[1]}
         stroke="#64748b"
         strokeDasharray="4 4"
       />
       <line
-        x1={sx(minLeft[0])}
-        y1={sy(minLeft[1])}
-        x2={sx(minRight[0])}
-        y2={sy(minRight[1])}
+        x1={minMore[0]}
+        y1={minMore[1]}
+        x2={minLess[0]}
+        y2={minLess[1]}
         stroke="#64748b"
         strokeDasharray="4 4"
       />
-      <text x={sx(majTop[0])} y={sy(majTop[1]) - 4} textAnchor="middle" className="pole">
+      <text x={majDehydrLab[0]} y={majDehydrLab[1]} textAnchor="start" className="pole">
         dehydration
       </text>
-      <text x={sx(majBot[0])} y={sy(majBot[1]) + 12} textAnchor="middle" className="pole">
+      <text x={majOverLab[0]} y={majOverLab[1]} textAnchor="end" className="pole">
         over-hydration
       </text>
-      <text x={sx(minLeft[0]) - 4} y={sy(minLeft[1]) - 4} textAnchor="end" className="pole">
+      <text x={minMoreLab[0]} y={minMoreLab[1]} textAnchor="end" className="pole">
         ← more cell mass
       </text>
-      <text x={sx(minRight[0]) + 4} y={sy(minRight[1]) + 12} textAnchor="start" className="pole">
+      <text x={minLessLab[0]} y={minLessLab[1]} textAnchor="start" className="pole">
         less cell mass →
       </text>
 

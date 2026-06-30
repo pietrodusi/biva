@@ -50,7 +50,8 @@ src/
   data.ts        Firestore data layer: global settings, patients, analyses
                  (load/save helpers + live hooks). The only file touching Firestore.
   App.tsx        Shell: auth + data + selection state + layout.
-  components/    PatientSidebar, PatientForm, PatientWorkspace, GlobalSettingsPanel.
+  components/    PatientPicker (header dropdown), PatientForm, PatientWorkspace,
+                 GlobalSettingsPanel.
   main.tsx       React entry — wraps App in AuthProvider + AuthGate.
   styles.css     All styling, including the @media print rules.
 ```

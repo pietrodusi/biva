@@ -11,7 +11,7 @@ import {
   type Patient,
   type PatientData,
 } from "./data";
-import { PatientSidebar } from "./components/PatientSidebar";
+import { PatientPicker } from "./components/PatientPicker";
 import { PatientForm } from "./components/PatientForm";
 import { PatientWorkspace } from "./components/PatientWorkspace";
 import { GlobalSettingsPanel } from "./components/GlobalSettingsPanel";
@@ -62,71 +62,77 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="account-bar no-print">
-        <span className="account-user">{user?.email}</span>
-        <button className="btn-link" onClick={() => void signOutUser()}>
-          Esci
-        </button>
-      </div>
-
       <header className="app-header">
-        <h1>Grafico R-Xc BIVA</h1>
-        <p className="subtitle">
-          Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
-          normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
-        </p>
-        <button className="btn print-btn no-print" onClick={() => window.print()}>
-          🖨 Stampa / Salva come PDF
-        </button>
+        <div className="header-left">
+          <h1>Grafico R-Xc BIVA</h1>
+        </div>
+        <div className="header-center no-print">
+          <PatientPicker
+            patients={patients}
+            loading={patientsLoading}
+            selectedId={selectedId}
+            onSelect={selectPatient}
+            onNew={() => {
+              setEditing("new");
+              setShowSettings(false);
+            }}
+          />
+        </div>
+        <div className="header-right no-print">
+          <button
+            className="btn-link"
+            onClick={() => {
+              setShowSettings(true);
+              setEditing(null);
+            }}
+          >
+            ⚙ Parametri dispositivo
+          </button>
+          <button className="btn-link" onClick={() => window.print()}>
+            🖨 Stampa
+          </button>
+          <span className="account-user">{user?.email}</span>
+          <button className="btn-link" onClick={() => void signOutUser()}>
+            Esci
+          </button>
+        </div>
       </header>
 
-      <main className="layout">
-        <PatientSidebar
-          patients={patients}
-          loading={patientsLoading}
-          selectedId={selectedId}
-          onSelect={selectPatient}
-          onNew={() => {
-            setEditing("new");
-            setShowSettings(false);
-          }}
-          onOpenSettings={() => {
-            setShowSettings(true);
-            setEditing(null);
-          }}
-        />
+      <p className="subtitle">
+        Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
+        normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
+      </p>
 
-        <div className="workspace">
-          {showSettings ? (
-            <GlobalSettingsPanel
-              overrides={overrides}
-              setOverrides={setOverrides}
-              saveStatus={saveStatus}
-              onClose={() => setShowSettings(false)}
-            />
-          ) : editing ? (
-            <PatientForm
-              patient={editing === "new" ? null : editing}
-              onSave={savePatient}
-              onCancel={() => setEditing(null)}
-            />
-          ) : selectedPatient && uid ? (
-            <PatientWorkspace
-              key={selectedPatient.id}
-              uid={uid}
-              patient={selectedPatient}
-              ref95={patientRef(selectedPatient)}
-              onEdit={() => setEditing(selectedPatient)}
-              onDelete={() => void removePatient(selectedPatient)}
-            />
-          ) : (
-            <section className="panel">
-              <p className="placeholder">
-                Seleziona un paziente dall'elenco oppure creane uno nuovo per iniziare.
-              </p>
-            </section>
-          )}
-        </div>
+      <main className="workspace">
+        {showSettings ? (
+          <GlobalSettingsPanel
+            overrides={overrides}
+            setOverrides={setOverrides}
+            saveStatus={saveStatus}
+            onClose={() => setShowSettings(false)}
+          />
+        ) : editing ? (
+          <PatientForm
+            patient={editing === "new" ? null : editing}
+            onSave={savePatient}
+            onCancel={() => setEditing(null)}
+          />
+        ) : selectedPatient && uid ? (
+          <PatientWorkspace
+            key={selectedPatient.id}
+            uid={uid}
+            patient={selectedPatient}
+            ref95={patientRef(selectedPatient)}
+            onEdit={() => setEditing(selectedPatient)}
+            onDelete={() => void removePatient(selectedPatient)}
+          />
+        ) : (
+          <section className="panel">
+            <p className="placeholder">
+              Seleziona un paziente dal menu in alto oppure creane uno nuovo per iniziare.
+            </p>
+          </section>
+        )}
       </main>
 
       <footer className="app-footer">

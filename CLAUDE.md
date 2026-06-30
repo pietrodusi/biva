@@ -41,23 +41,32 @@ npm run preview  # serve the production build
 ```
 src/
   biva.ts        Pure maths. No React. The auditable core.
-  references.ts  The real, sourced reference datasets (data only).
-  RxcPlot.tsx    Presentational SVG plot. Props in, SVG out, no state.
-  App.tsx        All UI + state: inputs, validation, wiring, results, print.
+  references.ts  Reference datasets + overrideKey / publishedParams helpers.
+  util.ts        Shared input-parsing + date helpers (no React/Firebase).
+  RxcPlot.tsx    Presentational SVG plot: a single point or a history trajectory.
   firebase.ts    Firebase app init; exports `auth` + `db` (config via env).
   auth.tsx       Auth context: `useAuth()` (user, loading, sign in/out).
   AuthGate.tsx   Sign-in screen; renders the app only once signed in.
-  data.ts        Firestore data layer (load/save helpers + hooks). Phase 1:
-                 `useGlobalSettings()` persists the device-param overrides.
+  data.ts        Firestore data layer: global settings, patients, analyses
+                 (load/save helpers + live hooks). The only file touching Firestore.
+  App.tsx        Shell: auth + data + selection state + layout.
+  components/    PatientSidebar, PatientForm, PatientWorkspace, GlobalSettingsPanel.
   main.tsx       React entry — wraps App in AuthProvider + AuthGate.
   styles.css     All styling, including the @media print rules.
 ```
 
 The UI is in Italian (`<html lang="it">`); it is the only language.
 
-Data flow is one-directional: `App` holds state → derives the patient `Vector`
-and active `RefParams` → calls `biva.ts` for results and passes them to
-`RxcPlot`. Keep `biva.ts` free of React and `RxcPlot` free of business logic.
+Data flow: `App` resolves the signed-in user, loads global settings + patients
+(`data.ts`), and holds selection state. The selected patient + its dated analyses
+feed `PatientWorkspace`, which derives the `Vector`(s) and `RefParams`, calls
+`biva.ts`, and passes results to `RxcPlot`. Keep `biva.ts` free of React,
+`RxcPlot` free of business logic, and `data.ts` the only place touching Firestore.
+
+**Three data tiers** (the structural backbone): *global* device-tuned reference
+params (per account), *per-patient* sex/height/reference-set (stable across
+visits), *per-analysis* date/R/Xc (one per visit). R/H and Xc/H are always derived
+(`r ÷ heightMetres`), never stored.
 
 ## Design decisions (the important part)
 
@@ -97,9 +106,9 @@ angle differ by device brand and supine-vs-standing protocol.
 - All maths lives in `biva.ts` and stays unit-testable in isolation. When you
   touch a formula, keep the explanatory comment truthful and re-verify against a
   known case (mean → distance 0; a point on the 95 % ellipse → d ≈ k95).
-- Inputs are controlled strings; parse + validate in `App.tsx`. Reject
-  non-positive R/Xc and implausible heights; the plot only renders a point when
-  inputs are complete and valid.
+- Inputs are controlled strings; parse + validate in the form components using
+  the `util.ts` helpers. Reject non-positive R/Xc and implausible heights; the
+  plot only renders a point when inputs are complete and valid.
 - Anything that must not appear on the printed handout gets the `no-print` class.
 
 ## Deployment
@@ -113,12 +122,15 @@ The deploy workflow injects `VITE_FIREBASE_*` from GitHub Actions **secrets**
 Google sign-in to work on the live site, `pietrodusi.github.io` must be added to
 the Firebase project's **Authentication → Settings → Authorized domains**.
 
-**Firestore (Phase 1+).** Data lives per account under `users/{uid}/...`. The
-global device-param overrides are at `users/{uid}/settings/global`
-(`{ referenceOverrides: { "<datasetId>:<sex>": RefParams }, updatedAt }`).
-Firestore must be enabled in the console, and `firestore.rules` (per-UID access)
-published via the console Rules tab or the Firebase CLI. The full multi-phase
-plan (patients, dated analyses, history graph) is in `ROADMAP.md`.
+**Firestore.** Data lives per account under `users/{uid}/...`:
+- `settings/global` — `{ referenceOverrides: { "<datasetId>:<sex>": RefParams }, updatedAt }`
+- `patients/{id}` — `{ name, sex, heightCm, referenceSetId, createdAt, updatedAt }`
+- `patients/{id}/analyses/{id}` — `{ date: "YYYY-MM-DD", r, xc, note?, createdAt }`
+
+Firestore must be enabled in the console and `firestore.rules` (per-UID access)
+published via the console Rules tab or the Firebase CLI. Dates are stored as
+date-only `"YYYY-MM-DD"` strings (timezone-safe; sort chronologically). The
+phased delivery plan is in `ROADMAP.md`.
 
 ## Local-tooling gotchas (Windows)
 

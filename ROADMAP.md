@@ -167,6 +167,10 @@ Extend `RxcPlot` (don't fork it) to optionally take an ordered list of points:
 
 Each phase is independently shippable and keeps `npm run build` green.
 
+> **Status:** Phases 0–5 implemented on branch `feature/patient-records`
+> (auth, global-settings persistence, patients, dated analyses, history graph,
+> layout polish). Pending: end-to-end manual testing + merge to `main`.
+
 0. **Firebase bootstrap.** Create project; enable Google auth; add
    `pietrodusi.github.io` to authorized domains; `firebase.ts` + env-injected
    config (GitHub Actions secrets → `VITE_FIREBASE_*`); auth gate wraps the app.

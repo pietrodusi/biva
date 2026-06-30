@@ -42,6 +42,11 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
   const ref: RefParams = overrides[key] ?? publishedParams(setId, sex);
   const isEdited = key in overrides;
 
+  const paramErrors: string[] = [];
+  if (ref.sdRH <= 0 || ref.sdXcH <= 0)
+    paramErrors.push("Le deviazioni standard devono essere positive.");
+  if (ref.r <= -1 || ref.r >= 1) paramErrors.push("La correlazione r deve essere compresa tra -1 e 1.");
+
   const updateRef = (field: keyof RefParams, value: string) => {
     const v = num(value);
     setOverrides((prev) => ({ ...prev, [key]: { ...ref, [field]: v ?? 0 } }));
@@ -124,6 +129,13 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
           </button>
         )}
       </div>
+      {paramErrors.length > 0 && (
+        <ul className="errors">
+          {paramErrors.map((e) => (
+            <li key={e}>{e}</li>
+          ))}
+        </ul>
+      )}
       <p className={`save-status small ${saveStatus === "error" ? "save-error" : "muted"}`}>
         {saveStatus === "saving"
           ? "Salvataggio…"

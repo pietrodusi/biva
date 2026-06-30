@@ -197,3 +197,78 @@ export async function deletePatient(uid: string, id: string): Promise<void> {
   await Promise.all(analyses.docs.map((d) => deleteDoc(d.ref)));
   await deleteDoc(patientDoc(uid, id));
 }
+
+// --- Analyses --------------------------------------------------------------
+//
+// One dated measurement per visit, under
+// `users/{uid}/patients/{patientId}/analyses/{id}`. The date is a "YYYY-MM-DD"
+// string: date-only (no time/timezone), and it sorts lexicographically =
+// chronologically, which is exactly what the history graph wants.
+
+/** The editable fields of a single dated measurement. */
+export interface AnalysisData {
+  date: string; // "YYYY-MM-DD"
+  r: number; // resistance, Ω
+  xc: number; // reactance, Ω
+  note?: string;
+}
+
+/** A stored analysis (its fields plus the Firestore document id). */
+export interface Analysis extends AnalysisData {
+  id: string;
+}
+
+const analysesCol = (uid: string, patientId: string) =>
+  collection(db, "users", uid, "patients", patientId, "analyses");
+
+/** Live list of a patient's analyses, oldest first (chronological). */
+export function useAnalyses(
+  uid: string | undefined,
+  patientId: string | undefined,
+): { analyses: Analysis[]; loading: boolean } {
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!uid || !patientId) {
+      setAnalyses([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const q = query(analysesCol(uid, patientId), orderBy("date"));
+    return onSnapshot(
+      q,
+      (snap) => {
+        setAnalyses(snap.docs.map((d) => ({ id: d.id, ...(d.data() as AnalysisData) })));
+        setLoading(false);
+      },
+      (e) => {
+        console.error("Failed to load analyses:", e);
+        setLoading(false);
+      },
+    );
+  }, [uid, patientId]);
+
+  return { analyses, loading };
+}
+
+export async function createAnalysis(
+  uid: string,
+  patientId: string,
+  data: AnalysisData,
+): Promise<string> {
+  const ref = await addDoc(analysesCol(uid, patientId), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function deleteAnalysis(
+  uid: string,
+  patientId: string,
+  id: string,
+): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "patients", patientId, "analyses", id));
+}

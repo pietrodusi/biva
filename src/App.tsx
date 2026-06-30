@@ -110,8 +110,10 @@ export default function App() {
               onSave={savePatient}
               onCancel={() => setEditing(null)}
             />
-          ) : selectedPatient ? (
+          ) : selectedPatient && uid ? (
             <PatientWorkspace
+              key={selectedPatient.id}
+              uid={uid}
               patient={selectedPatient}
               ref95={patientRef(selectedPatient)}
               onEdit={() => setEditing(selectedPatient)}

@@ -16,3 +16,21 @@ export const heightRange = (u: HeightUnit) =>
 /** Convert a height value in the given unit to metres. */
 export const toMeters = (value: number, unit: HeightUnit): number =>
   unit === "cm" ? value / 100 : value;
+
+/** Today's date as a local "YYYY-MM-DD" string (timezone-safe, date only). */
+export function todayISO(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Render a "YYYY-MM-DD" date string in Italian locale (e.g. "12 mar 2025"). */
+export function formatDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("it-IT", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

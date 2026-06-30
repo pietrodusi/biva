@@ -10,10 +10,11 @@ import {
 } from "../biva";
 import { getReferenceSet } from "../references";
 import { RxcPlot } from "../RxcPlot";
-import type { Patient } from "../data";
-import { num } from "../util";
+import { createAnalysis, deleteAnalysis, useAnalyses, type Analysis, type Patient } from "../data";
+import { formatDate, num, todayISO } from "../util";
 
 interface Props {
+  uid: string;
   patient: Patient;
   /** Reference params resolved for this patient (published or device-tuned). */
   ref95: RefParams;
@@ -22,37 +23,72 @@ interface Props {
 }
 
 /**
- * The per-patient workspace. Height/sex/reference come from the patient record;
- * the measurement (R, Xc) is entered here. (Persisted dated analyses arrive in
- * Phase 3 — for now the calculation is transient.)
+ * The per-patient workspace: record dated measurements, browse past visits, and
+ * plot the selected visit's vector. Height/sex/reference come from the patient.
  */
-export function PatientWorkspace({ patient, ref95, onEdit, onDelete }: Props) {
+export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Props) {
+  const { analyses } = useAnalyses(uid, patient.id);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // New-analysis form.
+  const [date, setDate] = useState(todayISO());
   const [R, setR] = useState("");
   const [Xc, setXc] = useState("");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const rVal = num(R);
-  const xcVal = num(Xc);
   const hMeters = patient.heightCm / 100;
   const refSet = getReferenceSet(patient.referenceSetId);
 
-  const errors: string[] = [];
-  if (R !== "" && (rVal === null || rVal <= 0)) errors.push("La resistenza deve essere un numero positivo.");
-  if (Xc !== "" && (xcVal === null || xcVal <= 0)) errors.push("La reattanza deve essere un numero positivo.");
+  // Selected visit: explicit pick, else the most recent (list is oldest-first).
+  const selected: Analysis | null =
+    analyses.find((a) => a.id === selectedId) ?? analyses[analyses.length - 1] ?? null;
 
-  const complete = rVal !== null && rVal > 0 && xcVal !== null && xcVal > 0;
+  const rVal = num(R);
+  const xcVal = num(Xc);
+  const formErrors: string[] = [];
+  if (R !== "" && (rVal === null || rVal <= 0)) formErrors.push("La resistenza deve essere un numero positivo.");
+  if (Xc !== "" && (xcVal === null || xcVal <= 0)) formErrors.push("La reattanza deve essere un numero positivo.");
+  const canSave = rVal !== null && rVal > 0 && xcVal !== null && xcVal > 0 && date !== "" && !saving;
+
+  const save = async () => {
+    if (!canSave || rVal === null || xcVal === null) return;
+    setSaving(true);
+    try {
+      const id = await createAnalysis(uid, patient.id, {
+        date,
+        r: rVal,
+        xc: xcVal,
+        ...(note.trim() ? { note: note.trim() } : {}),
+      });
+      setSelectedId(id);
+      setR("");
+      setXc("");
+      setNote("");
+      setDate(todayISO());
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeAnalysis = async (a: Analysis) => {
+    if (!window.confirm(`Eliminare l'analisi del ${formatDate(a.date)}?`)) return;
+    await deleteAnalysis(uid, patient.id, a.id);
+    if (selectedId === a.id) setSelectedId(null);
+  };
 
   const result = useMemo(() => {
-    if (!complete || rVal === null || xcVal === null) return null;
-    const point: Vector = { rh: rVal / hMeters, xch: xcVal / hMeters };
+    if (!selected) return null;
+    const point: Vector = { rh: selected.r / hMeters, xch: selected.xc / hMeters };
     const distance = mahalanobis(point, ref95);
     return {
       point,
-      phase: phaseAngleDeg(rVal, xcVal),
+      phase: phaseAngleDeg(selected.r, selected.xc),
       distance,
       zone: classify(distance),
       interpretation: interpret(point, ref95),
     };
-  }, [complete, rVal, xcVal, hMeters, ref95]);
+  }, [selected, hMeters, ref95]);
 
   return (
     <section className="panel output" aria-label="Analisi del paziente">
@@ -73,28 +109,69 @@ export function PatientWorkspace({ patient, ref95, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="grid measurement-inputs no-print">
-        <label>
-          Resistenza R (Ω)
-          <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="es. 500" />
-        </label>
-        <label>
-          Reattanza Xc (Ω)
-          <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="es. 55" />
-        </label>
+      <div className="new-analysis no-print">
+        <h3 className="subhead">Nuova analisi</h3>
+        <div className="grid">
+          <label>
+            Data
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </label>
+          <label>
+            Resistenza R (Ω)
+            <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="es. 500" />
+          </label>
+          <label>
+            Reattanza Xc (Ω)
+            <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="es. 55" />
+          </label>
+          <label className="full">
+            Nota (facoltativa)
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. a digiuno" />
+          </label>
+        </div>
+        {formErrors.length > 0 && (
+          <ul className="errors">
+            {formErrors.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        )}
+        <div className="form-actions">
+          <button className="btn" disabled={!canSave} onClick={() => void save()}>
+            {saving ? "Salvataggio…" : "Salva analisi"}
+          </button>
+        </div>
       </div>
 
-      {errors.length > 0 && (
-        <ul className="errors no-print">
-          {errors.map((e) => (
-            <li key={e}>{e}</li>
-          ))}
-        </ul>
+      {analyses.length > 0 && (
+        <div className="visit-list no-print">
+          <h3 className="subhead">Analisi registrate</h3>
+          <ul>
+            {[...analyses].reverse().map((a) => (
+              <li key={a.id} className={a.id === selected?.id ? "active" : ""}>
+                <button className="visit-item" onClick={() => setSelectedId(a.id)}>
+                  <span className="visit-date">{formatDate(a.date)}</span>
+                  <span className="muted small">
+                    R {a.r} · Xc {a.xc}
+                    {a.note ? ` · ${a.note}` : ""}
+                  </span>
+                </button>
+                <button
+                  className="btn-link btn-danger visit-del"
+                  title="Elimina"
+                  onClick={() => void removeAnalysis(a)}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
 
-      {result ? (
+      {result && selected ? (
         <div className="results">
           <div className="result-grid">
             <Metric label="R/H" value={`${result.point.rh.toFixed(1)} Ω/m`} />
@@ -107,12 +184,12 @@ export function PatientWorkspace({ patient, ref95, onEdit, onDelete }: Props) {
           </p>
           <p className="interpretation">{result.interpretation.text}</p>
           <p className="print-meta">
-            {patient.name} · {patient.sex === "male" ? "Uomo" : "Donna"} · {patient.heightCm} cm ·{" "}
-            Riferimento: {refSet.label}
+            {patient.name} · {patient.sex === "male" ? "Uomo" : "Donna"} · {patient.heightCm} cm · Data:{" "}
+            {formatDate(selected.date)} · Riferimento: {refSet.label}
           </p>
         </div>
       ) : (
-        <p className="placeholder">Inserisci resistenza e reattanza per tracciare il vettore.</p>
+        <p className="placeholder">Aggiungi un'analisi per tracciare il vettore.</p>
       )}
     </section>
   );

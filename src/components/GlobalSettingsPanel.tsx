@@ -39,7 +39,7 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
     <section className="panel narrow" aria-label="Impostazioni globali del dispositivo">
       <div className="panel-head">
         <h2>Parametri di riferimento (dispositivo)</h2>
-        <button className="btn-link" onClick={onClose}>
+        <button className="btn-ghost" onClick={onClose}>
           ← Indietro
         </button>
       </div>

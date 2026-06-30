@@ -247,6 +247,24 @@ export function RxcPlot({ ref95, point, points, sexLabel }: Props) {
               strokeOpacity={0.55}
             />
           )}
+          {/* Arrowhead at the middle of each segment, pointing past -> future. */}
+          {traj.slice(1).map((b, i) => {
+            const a = traj[i];
+            const ax = sx(a.rh);
+            const ay = sy(a.xch);
+            const bx = sx(b.rh);
+            const by = sy(b.xch);
+            const deg = (Math.atan2(by - ay, bx - ax) * 180) / Math.PI;
+            return (
+              <path
+                key={`arrow${i}`}
+                d="M-5,-3.5 L4,0 L-5,3.5 Z"
+                transform={`translate(${((ax + bx) / 2).toFixed(2)},${((ay + by) / 2).toFixed(2)}) rotate(${deg.toFixed(1)})`}
+                fill="#1d4ed8"
+                fillOpacity={0.85}
+              />
+            );
+          })}
           {traj.map((p, i) => {
             const t = traj.length === 1 ? 1 : i / (traj.length - 1);
             const isLast = i === traj.length - 1;

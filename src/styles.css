@@ -319,6 +319,16 @@ body {
   margin: 0 0 8px;
 }
 
+.dataset-block {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+.dataset-block .subhead {
+  margin-top: 0;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);

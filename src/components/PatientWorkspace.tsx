@@ -89,18 +89,30 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
   );
   const canShowHistory = analyses.length >= 2;
 
+  // The measurement the plot + metrics describe. In "this visit" mode a valid
+  // live R/Xc entry previews immediately; otherwise the selected stored visit.
+  const liveValid = rVal !== null && rVal > 0 && xcVal !== null && xcVal > 0;
+  const displayMeasure =
+    view === "visit" && liveValid
+      ? { r: rVal as number, xc: xcVal as number, dateLabel: `${formatDate(date)} (non salvata)` }
+      : selected
+        ? { r: selected.r, xc: selected.xc, dateLabel: formatDate(selected.date) }
+        : null;
+
   const result = useMemo(() => {
-    if (!selected) return null;
-    const point: Vector = { rh: selected.r / hMeters, xch: selected.xc / hMeters };
+    if (!displayMeasure) return null;
+    const point: Vector = { rh: displayMeasure.r / hMeters, xch: displayMeasure.xc / hMeters };
     const distance = mahalanobis(point, ref95);
     return {
       point,
-      phase: phaseAngleDeg(selected.r, selected.xc),
+      phase: phaseAngleDeg(displayMeasure.r, displayMeasure.xc),
       distance,
       zone: classify(distance),
       interpretation: interpret(point, ref95),
+      dateLabel: displayMeasure.dateLabel,
     };
-  }, [selected, hMeters, ref95]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayMeasure?.r, displayMeasure?.xc, displayMeasure?.dateLabel, hMeters, ref95]);
 
   return (
     <section className="panel output" aria-label="Analisi del paziente">
@@ -209,7 +221,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
         <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
       )}
 
-      {result && selected ? (
+      {result ? (
         <div className="results">
           <div className="result-grid">
             <Metric label="R/H" value={`${result.point.rh.toFixed(1)} Ω/m`} />
@@ -223,11 +235,11 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
           <p className="interpretation">{result.interpretation.text}</p>
           <p className="print-meta">
             {patient.name} · {patient.sex === "male" ? "Uomo" : "Donna"} · {patient.heightCm} cm · Data:{" "}
-            {formatDate(selected.date)} · Riferimento: {refSet.label}
+            {result.dateLabel} · Riferimento: {refSet.label}
           </p>
         </div>
       ) : (
-        <p className="placeholder">Aggiungi un'analisi per tracciare il vettore.</p>
+        <p className="placeholder">Inserisci resistenza e reattanza per tracciare il vettore.</p>
       )}
     </section>
   );

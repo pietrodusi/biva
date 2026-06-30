@@ -1,11 +1,11 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   COMPILATION_REFERENCE,
-  DEFAULT_SET_ID,
   getReferenceSet,
   overrideKey,
   publishedParams,
   REFERENCE_SETS,
+  type ReferenceSet,
   type Sex,
 } from "../references";
 import type { RefParams } from "../biva";
@@ -29,17 +29,82 @@ interface Props {
 
 /**
  * Account-wide device tuning. The five reference-ellipse parameters depend on
- * the BIA device/protocol, so they are edited once here (per dataset + sex) and
- * persisted globally — patients then just pick which dataset applies to them.
+ * the BIA device/protocol, so they are tuned here (once per account) for each
+ * published dataset + sex. The dataset itself is chosen per patient, not here.
  */
 export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClose }: Props) {
-  const [setId, setSetId] = useState<string>(DEFAULT_SET_ID);
   const [sex, setSex] = useState<Sex>("male");
 
-  const refSet = getReferenceSet(setId);
-  const key = overrideKey(setId, sex);
-  const published = refSet.params[sex];
-  const ref: RefParams = overrides[key] ?? publishedParams(setId, sex);
+  return (
+    <section className="panel" aria-label="Impostazioni globali del dispositivo">
+      <div className="panel-head">
+        <h2>Parametri di riferimento (dispositivo)</h2>
+        <button className="btn-link" onClick={onClose}>
+          ← Torna
+        </button>
+      </div>
+
+      <p className="muted small">
+        Questi parametri descrivono le popolazioni di riferimento e dipendono dal dispositivo BIA.
+        Vengono salvati a livello di account. Il dataset da usare si sceglie per ogni singolo
+        paziente.
+      </p>
+
+      <label className="full">
+        Sesso
+        <select value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
+          <option value="male">Uomo</option>
+          <option value="female">Donna</option>
+        </select>
+      </label>
+
+      {REFERENCE_SETS.map((set) => (
+        <DatasetParams
+          key={set.id}
+          set={set}
+          sex={sex}
+          overrides={overrides}
+          setOverrides={setOverrides}
+        />
+      ))}
+
+      <p className={`save-status small ${saveStatus === "error" ? "save-error" : "muted"}`}>
+        {saveStatus === "saving"
+          ? "Salvataggio…"
+          : saveStatus === "saved"
+            ? "✓ Salvato nel tuo account"
+            : saveStatus === "error"
+              ? "⚠ Salvataggio non riuscito — riprova"
+              : "I parametri sono salvati automaticamente nel tuo account."}
+      </p>
+
+      <p className="caveat">
+        ⚠ Il set di riferimento deve corrispondere al dispositivo e al protocollo BIA utilizzati. I
+        valori grezzi di Xc e l'angolo di fase variano tra le marche dei dispositivi e tra
+        analizzatori in posizione supina e in piedi — un vettore confrontato con il riferimento
+        sbagliato è fuorviante. Per usare un'altra popolazione (pediatrica, sportiva, patologica),
+        leggi i cinque parametri dalla figura corrispondente in{" "}
+        <a href={COMPILATION_REFERENCE.url} target="_blank" rel="noreferrer">
+          Serafini et al. 2025
+        </a>{" "}
+        e inseriscili qui.
+      </p>
+    </section>
+  );
+}
+
+interface DatasetProps {
+  set: ReferenceSet;
+  sex: Sex;
+  overrides: ReferenceOverrides;
+  setOverrides: Dispatch<SetStateAction<ReferenceOverrides>>;
+}
+
+/** The five editable params for one dataset + sex, with reset + validation. */
+function DatasetParams({ set, sex, overrides, setOverrides }: DatasetProps) {
+  const key = overrideKey(set.id, sex);
+  const published = getReferenceSet(set.id).params[sex];
+  const ref: RefParams = overrides[key] ?? publishedParams(set.id, sex);
   const isEdited = key in overrides;
 
   const paramErrors: string[] = [];
@@ -59,49 +124,13 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
     });
 
   return (
-    <section className="panel" aria-label="Impostazioni globali del dispositivo">
-      <div className="panel-head">
-        <h2>Parametri di riferimento (dispositivo)</h2>
-        <button className="btn-link" onClick={onClose}>
-          ← Torna
-        </button>
-      </div>
-
-      <p className="muted small">
-        Questi cinque parametri descrivono la popolazione di riferimento e dipendono dal dispositivo
-        BIA. Vengono salvati a livello di account e usati per tutti i pazienti che adottano lo stesso
-        dataset.
-      </p>
-
-      <div className="grid">
-        <label>
-          Dataset di riferimento
-          <select value={setId} onChange={(e) => setSetId(e.target.value)}>
-            {REFERENCE_SETS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Sesso
-          <select value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
-            <option value="male">Uomo</option>
-            <option value="female">Donna</option>
-          </select>
-        </label>
-      </div>
-
+    <div className="dataset-block">
+      <h3 className="subhead">{set.label}</h3>
       <p className="source-note">
-        <strong>Fonte:</strong> {refSet.citation}{" "}
-        <a href={refSet.url} target="_blank" rel="noreferrer">
-          doi:{refSet.doi}
+        <strong>Fonte:</strong> {set.citation}{" "}
+        <a href={set.url} target="_blank" rel="noreferrer">
+          doi:{set.doi}
         </a>
-        <br />
-        <span className="muted">
-          {refSet.population}. I valori presuppongono: {refSet.device}.
-        </span>
       </p>
 
       <div className="ref-grid">
@@ -136,27 +165,6 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
           ))}
         </ul>
       )}
-      <p className={`save-status small ${saveStatus === "error" ? "save-error" : "muted"}`}>
-        {saveStatus === "saving"
-          ? "Salvataggio…"
-          : saveStatus === "saved"
-            ? "✓ Salvato nel tuo account"
-            : saveStatus === "error"
-              ? "⚠ Salvataggio non riuscito — riprova"
-              : "I parametri sono salvati automaticamente nel tuo account."}
-      </p>
-
-      <p className="caveat">
-        ⚠ Il set di riferimento deve corrispondere al dispositivo e al protocollo BIA utilizzati. I
-        valori grezzi di Xc e l'angolo di fase variano tra le marche dei dispositivi e tra
-        analizzatori in posizione supina e in piedi — un vettore confrontato con il riferimento
-        sbagliato è fuorviante. Per usare un'altra popolazione (pediatrica, sportiva, patologica),
-        leggi i cinque parametri dalla figura corrispondente in{" "}
-        <a href={COMPILATION_REFERENCE.url} target="_blank" rel="noreferrer">
-          Serafini et al. 2025
-        </a>{" "}
-        e inseriscili qui sopra.
-      </p>
-    </section>
+    </div>
   );
 }

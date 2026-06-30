@@ -25,9 +25,9 @@ export interface ReferenceSet {
 export const REFERENCE_SETS: ReferenceSet[] = [
   {
     id: "campa2023",
-    label: "General adults 18–65 — Campa 2023",
-    population: "Apparently healthy general adults, 18–65 y (Italy, multicentre)",
-    device: "Phase-sensitive foot-to-hand BIA, 50 kHz (supine)",
+    label: "Adulti 18–65 anni — Campa 2023",
+    population: "Adulti generali apparentemente sani, 18–65 anni (Italia, multicentrico)",
+    device: "BIA mano-piede fase-sensibile, 50 kHz (supina)",
     citation:
       "Campa F, Coratella G, et al. New bioelectrical impedance vector references and phase angle centile curves in 4,367 adults. Clinical Nutrition 2023;42:1749–1758.",
     doi: "10.1016/j.clnu.2023.07.025",
@@ -40,9 +40,9 @@ export const REFERENCE_SETS: ReferenceSet[] = [
   },
   {
     id: "campa2025",
-    label: "Older adults 65+ — Campa 2025",
-    population: "Community-dwelling older adults, 65–97 y",
-    device: "Phase-sensitive foot-to-hand BIA, 50 kHz (supine)",
+    label: "Anziani 65+ — Campa 2025",
+    population: "Anziani non istituzionalizzati, 65–97 anni",
+    device: "BIA mano-piede fase-sensibile, 50 kHz (supina)",
     citation:
       "Campa F, et al. Bioelectrical impedance vector analysis in older adults: reference standards from a cross-sectional study. Frontiers in Nutrition 2025;12:1640407.",
     doi: "10.3389/fnut.2025.1640407",

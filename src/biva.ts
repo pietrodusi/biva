@@ -134,10 +134,10 @@ export function classify(distance: number): Zone {
 }
 
 export const ZONE_LABEL: Record<Zone, string> = {
-  inside50: "Inside the 50% ellipse",
-  between50and75: "Between the 50% and 75% ellipses",
-  between75and95: "Between the 75% and 95% ellipses",
-  outside95: "Outside the 95% ellipse",
+  inside50: "All'interno dell'ellisse del 50%",
+  between50and75: "Tra le ellissi del 50% e del 75%",
+  between75and95: "Tra le ellissi del 75% e del 95%",
+  outside95: "All'esterno dell'ellisse del 95%",
 };
 
 /**
@@ -184,9 +184,9 @@ export interface Interpretation {
 
 const magnitudeWord = (z: number): string => {
   const a = Math.abs(z);
-  if (a < 1) return "slightly";
-  if (a < 2) return "moderately";
-  return "markedly";
+  if (a < 1) return "lievemente";
+  if (a < 2) return "moderatamente";
+  return "marcatamente";
 };
 
 /**
@@ -226,27 +226,27 @@ export function interpret(point: Vector, ref: RefParams): Interpretation {
   // Hydration noun-phrase (toward upper pole = dehydration; lower = oedema).
   let hydrationText: string;
   if (hydration === "normal") {
-    hydrationText = "typical hydration";
+    hydrationText = "idratazione tipica";
   } else if (hydration === "high") {
-    hydrationText = `${magnitudeWord(zHydration)} reduced total body water (toward the dehydration pole)`;
+    hydrationText = `acqua corporea totale ${magnitudeWord(zHydration)} ridotta (verso il polo della disidratazione)`;
   } else {
-    hydrationText = `${magnitudeWord(zHydration)} excess fluid (toward the over-hydration / oedema pole)`;
+    hydrationText = `eccesso di liquidi ${magnitudeWord(zHydration)} marcato (verso il polo dell'iperidratazione / edema)`;
   }
 
   // Cell-mass noun-phrase (left = more cell mass; right = less).
   let cellText: string;
   if (cellMass === "normal") {
-    cellText = "typical cell mass";
+    cellText = "massa cellulare tipica";
   } else if (cellMass === "high") {
-    cellText = `${magnitudeWord(zCellMass)} greater cell mass (higher reactance)`;
+    cellText = `massa cellulare ${magnitudeWord(zCellMass)} maggiore (reattanza più alta)`;
   } else {
-    cellText = `${magnitudeWord(zCellMass)} reduced cell mass (lower reactance)`;
+    cellText = `massa cellulare ${magnitudeWord(zCellMass)} ridotta (reattanza più bassa)`;
   }
 
   const text =
     hydration === "normal" && cellMass === "normal"
-      ? "The vector sits close to the reference mean: hydration and cell mass are both within the typical range."
-      : `Relative to the reference population, this vector suggests ${hydrationText} and ${cellText}.`;
+      ? "Il vettore si colloca vicino alla media di riferimento: idratazione e massa cellulare rientrano entrambe nell'intervallo tipico."
+      : `Rispetto alla popolazione di riferimento, questo vettore suggerisce ${hydrationText} e ${cellText}.`;
 
   return { zHydration, zCellMass, hydration, cellMass, text };
 }

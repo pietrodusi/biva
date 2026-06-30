@@ -21,11 +21,11 @@ import "./styles.css";
 type HeightUnit = "cm" | "m";
 
 const REF_FIELDS: Array<{ key: keyof RefParams; label: string; unit: string; step: number }> = [
-  { key: "meanRH", label: "mean R/H", unit: "Ω/m", step: 0.1 },
-  { key: "meanXcH", label: "mean Xc/H", unit: "Ω/m", step: 0.1 },
-  { key: "sdRH", label: "SD R/H", unit: "Ω/m", step: 0.1 },
-  { key: "sdXcH", label: "SD Xc/H", unit: "Ω/m", step: 0.1 },
-  { key: "r", label: "correlation r", unit: "", step: 0.01 },
+  { key: "meanRH", label: "media R/H", unit: "Ω/m", step: 0.1 },
+  { key: "meanXcH", label: "media Xc/H", unit: "Ω/m", step: 0.1 },
+  { key: "sdRH", label: "DS R/H", unit: "Ω/m", step: 0.1 },
+  { key: "sdXcH", label: "DS Xc/H", unit: "Ω/m", step: 0.1 },
+  { key: "r", label: "correlazione r", unit: "", step: 0.01 },
 ];
 
 // Plausible-input guards.
@@ -83,12 +83,12 @@ export default function App() {
   const hr = heightRange(heightUnit);
 
   const errors: string[] = [];
-  if (R !== "" && (rVal === null || rVal <= 0)) errors.push("Resistance must be a positive number.");
-  if (Xc !== "" && (xcVal === null || xcVal <= 0)) errors.push("Reactance must be a positive number.");
+  if (R !== "" && (rVal === null || rVal <= 0)) errors.push("La resistenza deve essere un numero positivo.");
+  if (Xc !== "" && (xcVal === null || xcVal <= 0)) errors.push("La reattanza deve essere un numero positivo.");
   if (height !== "" && (hVal === null || hVal < hr.min || hVal > hr.max))
-    errors.push(`Height must be between ${hr.min} and ${hr.max} ${heightUnit}.`);
-  if (ref.r <= -1 || ref.r >= 1) errors.push("Correlation r must be between -1 and 1.");
-  if (ref.sdRH <= 0 || ref.sdXcH <= 0) errors.push("Standard deviations must be positive.");
+    errors.push(`L'altezza deve essere compresa tra ${hr.min} e ${hr.max} ${heightUnit}.`);
+  if (ref.r <= -1 || ref.r >= 1) errors.push("La correlazione r deve essere compresa tra -1 e 1.");
+  if (ref.sdRH <= 0 || ref.sdXcH <= 0) errors.push("Le deviazioni standard devono essere positive.");
 
   const complete =
     rVal !== null &&
@@ -120,57 +120,57 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>BIVA R-Xc Graph</h1>
+        <h1>Grafico R-Xc BIVA</h1>
         <p className="subtitle">
-          Bioelectrical Impedance Vector Analysis — plots the height-normalised impedance vector
-          against 50 / 75 / 95% tolerance ellipses.
+          Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
+          normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
         </p>
         <button className="btn print-btn no-print" onClick={() => window.print()}>
-          🖨 Print / Save as PDF
+          🖨 Stampa / Salva come PDF
         </button>
       </header>
 
       <main className="layout">
         {/* ---------------- Inputs ---------------- */}
-        <section className="panel inputs no-print" aria-label="Inputs">
-          <h2>Patient measurement</h2>
+        <section className="panel inputs no-print" aria-label="Dati inseriti">
+          <h2>Misurazione del paziente</h2>
           <div className="grid">
             <label>
-              Resistance R (Ω)
-              <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="e.g. 500" />
+              Resistenza R (Ω)
+              <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="es. 500" />
             </label>
             <label>
-              Reactance Xc (Ω)
-              <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="e.g. 55" />
+              Reattanza Xc (Ω)
+              <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="es. 55" />
             </label>
             <label>
-              Height
+              Altezza
               <input
                 inputMode="decimal"
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
-                placeholder={heightUnit === "cm" ? "e.g. 175" : "e.g. 1.75"}
+                placeholder={heightUnit === "cm" ? "es. 175" : "es. 1.75"}
               />
             </label>
             <label>
-              Unit
+              Unità
               <select value={heightUnit} onChange={(e) => setHeightUnit(e.target.value as HeightUnit)}>
                 <option value="cm">cm</option>
                 <option value="m">m</option>
               </select>
             </label>
             <label>
-              Sex
+              Sesso
               <select value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="male">Uomo</option>
+                <option value="female">Donna</option>
               </select>
             </label>
           </div>
 
-          <h2>Reference population</h2>
+          <h2>Popolazione di riferimento</h2>
           <label className="full">
-            Reference dataset
+            Dataset di riferimento
             <select value={setId} onChange={(e) => setSetId(e.target.value)}>
               {REFERENCE_SETS.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -181,13 +181,13 @@ export default function App() {
           </label>
 
           <p className="source-note">
-            <strong>Source:</strong> {refSet.citation}{" "}
+            <strong>Fonte:</strong> {refSet.citation}{" "}
             <a href={refSet.url} target="_blank" rel="noreferrer">
               doi:{refSet.doi}
             </a>
             <br />
             <span className="muted">
-              {refSet.population}. Values assume: {refSet.device}.
+              {refSet.population}. I valori presuppongono: {refSet.device}.
             </span>
           </p>
 
@@ -206,24 +206,25 @@ export default function App() {
           </div>
           <div className="ref-actions">
             <span className={isEdited ? "edited-tag" : "muted small"}>
-              {isEdited ? "Edited — differs from published values" : `Published values (n=${published.n})`}
+              {isEdited ? "Modificato — differisce dai valori pubblicati" : `Valori pubblicati (n=${published.n})`}
             </span>
             {isEdited && (
               <button className="btn-link" onClick={resetRef}>
-                Reset to study values
+                Ripristina i valori dello studio
               </button>
             )}
           </div>
 
           <p className="caveat">
-            ⚠ The reference set must match your BIA device and protocol. Raw Xc and phase angle differ
-            between device brands and between supine and standing analyzers — a vector compared to the
-            wrong reference is misleading. To use another population (pediatric, athletic, pathological),
-            read the five parameters off the matching figure in{" "}
+            ⚠ Il set di riferimento deve corrispondere al dispositivo e al protocollo BIA utilizzati. I
+            valori grezzi di Xc e l'angolo di fase variano tra le marche dei dispositivi e tra analizzatori
+            in posizione supina e in piedi — un vettore confrontato con il riferimento sbagliato è
+            fuorviante. Per usare un'altra popolazione (pediatrica, sportiva, patologica), leggi i cinque
+            parametri dalla figura corrispondente in{" "}
             <a href={COMPILATION_REFERENCE.url} target="_blank" rel="noreferrer">
               Serafini et al. 2025
             </a>{" "}
-            and type them in above.
+            e inseriscili qui sopra.
           </p>
 
           {errors.length > 0 && (
@@ -236,7 +237,7 @@ export default function App() {
         </section>
 
         {/* ---------------- Output ---------------- */}
-        <section className="panel output" aria-label="Result">
+        <section className="panel output" aria-label="Risultato">
           <RxcPlot ref95={ref} point={result?.point ?? null} sexLabel={sex} />
 
           {result ? (
@@ -244,22 +245,22 @@ export default function App() {
               <div className="result-grid">
                 <Metric label="R/H" value={`${result.point.rh.toFixed(1)} Ω/m`} />
                 <Metric label="Xc/H" value={`${result.point.xch.toFixed(1)} Ω/m`} />
-                <Metric label="Phase angle" value={`${result.phase.toFixed(1)}°`} />
-                <Metric label="Mahalanobis D" value={result.distance.toFixed(2)} />
+                <Metric label="Angolo di fase" value={`${result.phase.toFixed(1)}°`} />
+                <Metric label="D di Mahalanobis" value={result.distance.toFixed(2)} />
               </div>
               <p className="zone">
                 <span className={`zone-badge zone-${result.zone}`}>{ZONE_LABEL[result.zone]}</span>
               </p>
               <p className="interpretation">{result.interpretation.text}</p>
               <p className="print-meta">
-                Reference: {refSet.label}
-                {isEdited ? " (values edited)" : ""} · Sex: {sex} · Height:{" "}
+                Riferimento: {refSet.label}
+                {isEdited ? " (valori modificati)" : ""} · Sesso: {sex === "male" ? "Uomo" : "Donna"} · Altezza:{" "}
                 {height || "—"} {heightUnit}
               </p>
             </div>
           ) : (
             <p className="placeholder">
-              Enter resistance, reactance and height to plot the patient vector.
+              Inserisci resistenza, reattanza e altezza per tracciare il vettore del paziente.
             </p>
           )}
         </section>
@@ -267,9 +268,10 @@ export default function App() {
 
       <footer className="app-footer">
         <p>
-          BIVA is a qualitative method: it plots the raw, height-normalised impedance vector and does
-          not estimate body fat or muscle mass. This tool is a calculation/plotting aid, not a
-          diagnostic device. Interpretation is the clinician's responsibility.
+          La BIVA è un metodo qualitativo: traccia il vettore di impedenza grezzo, normalizzato per
+          l'altezza, e non stima la massa grassa o la massa muscolare. Questo strumento è un ausilio al
+          calcolo e alla rappresentazione grafica, non un dispositivo diagnostico. L'interpretazione è
+          responsabilità del clinico.
         </p>
       </footer>
     </div>

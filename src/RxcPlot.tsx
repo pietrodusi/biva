@@ -116,7 +116,7 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
       className="rxc-plot"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label={`R-Xc graph for ${sexLabel}`}
+      aria-label={`Grafico R-Xc per ${sexLabel === "male" ? "uomo" : sexLabel === "female" ? "donna" : sexLabel}`}
       preserveAspectRatio="xMidYMid meet"
     >
       {/* Plot frame */}
@@ -175,16 +175,16 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
         strokeDasharray="4 4"
       />
       <text x={majDehydrLab[0]} y={majDehydrLab[1]} textAnchor="start" className="pole">
-        dehydration
+        disidratazione
       </text>
       <text x={majOverLab[0]} y={majOverLab[1]} textAnchor="end" className="pole">
-        over-hydration
+        iperidratazione
       </text>
       <text x={minMoreLab[0]} y={minMoreLab[1]} textAnchor="end" className="pole">
-        ← more cell mass
+        ← più massa cellulare
       </text>
       <text x={minLessLab[0]} y={minLessLab[1]} textAnchor="start" className="pole">
-        less cell mass →
+        meno massa cellulare →
       </text>
 
       {/* Tolerance ellipses */}
@@ -224,7 +224,7 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
           <g key={e.p} transform={`translate(0, ${i * 16})`}>
             <line x1={0} y1={0} x2={18} y2={0} stroke={LEVEL_STYLE[e.p].stroke} strokeWidth={2} />
             <text x={24} y={4} className="legend">
-              {LEVEL_STYLE[e.p].label} tolerance
+              tolleranza {LEVEL_STYLE[e.p].label}
             </text>
           </g>
         ))}

@@ -265,6 +265,18 @@ export async function createAnalysis(
   return ref.id;
 }
 
+export async function updateAnalysis(
+  uid: string,
+  patientId: string,
+  id: string,
+  data: AnalysisData,
+): Promise<void> {
+  await updateDoc(doc(db, "users", uid, "patients", patientId, "analyses", id), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function deleteAnalysis(
   uid: string,
   patientId: string,

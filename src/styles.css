@@ -228,6 +228,15 @@ body {
   color: var(--muted);
   margin: 0 0 10px;
 }
+.subhead-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.subhead-row .subhead {
+  margin-bottom: 10px;
+}
 
 .new-analysis {
   border: 1px solid var(--line);

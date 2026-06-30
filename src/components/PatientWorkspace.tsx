@@ -10,7 +10,14 @@ import {
 } from "../biva";
 import { getReferenceSet } from "../references";
 import { RxcPlot } from "../RxcPlot";
-import { createAnalysis, deleteAnalysis, useAnalyses, type Analysis, type Patient } from "../data";
+import {
+  createAnalysis,
+  deleteAnalysis,
+  updateAnalysis,
+  useAnalyses,
+  type Analysis,
+  type Patient,
+} from "../data";
 import { formatDate, num, todayISO } from "../util";
 
 interface Props {
@@ -23,15 +30,17 @@ interface Props {
 }
 
 /**
- * The per-patient workspace: record dated measurements, browse past visits, and
- * plot the selected visit's vector. Height/sex/reference come from the patient.
+ * The per-patient workspace. The form edits one analysis at a time: clicking a
+ * recorded analysis loads it for editing; "Nuova analisi" starts a fresh one.
+ * Height/sex/reference come from the patient record.
  */
 export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Props) {
   const { analyses } = useAnalyses(uid, patient.id);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<"visit" | "history">("visit");
 
-  // New-analysis form.
+  // The analysis currently loaded in the form: an existing id, or null for a new
+  // (unsaved) one.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState(todayISO());
   const [R, setR] = useState("");
   const [Xc, setXc] = useState("");
@@ -41,9 +50,23 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
   const hMeters = patient.heightCm / 100;
   const refSet = getReferenceSet(patient.referenceSetId);
 
-  // Selected visit: explicit pick, else the most recent (list is oldest-first).
-  const selected: Analysis | null =
-    analyses.find((a) => a.id === selectedId) ?? analyses[analyses.length - 1] ?? null;
+  const loadAnalysis = (a: Analysis) => {
+    setEditingId(a.id);
+    setDate(a.date);
+    setR(String(a.r));
+    setXc(String(a.xc));
+    setNote(a.note ?? "");
+    setView("visit");
+  };
+
+  const newAnalysis = () => {
+    setEditingId(null);
+    setDate(todayISO());
+    setR("");
+    setXc("");
+    setNote("");
+    setView("visit");
+  };
 
   const rVal = num(R);
   const xcVal = num(Xc);
@@ -56,17 +79,13 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
     if (!canSave || rVal === null || xcVal === null) return;
     setSaving(true);
     try {
-      const id = await createAnalysis(uid, patient.id, {
-        date,
-        r: rVal,
-        xc: xcVal,
-        ...(note.trim() ? { note: note.trim() } : {}),
-      });
-      setSelectedId(id);
-      setR("");
-      setXc("");
-      setNote("");
-      setDate(todayISO());
+      const data = { date, r: rVal, xc: xcVal, note: note.trim() };
+      if (editingId) {
+        await updateAnalysis(uid, patient.id, editingId, data);
+      } else {
+        const id = await createAnalysis(uid, patient.id, data);
+        setEditingId(id);
+      }
     } finally {
       setSaving(false);
     }
@@ -75,7 +94,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
   const removeAnalysis = async (a: Analysis) => {
     if (!window.confirm(`Eliminare l'analisi del ${formatDate(a.date)}?`)) return;
     await deleteAnalysis(uid, patient.id, a.id);
-    if (selectedId === a.id) setSelectedId(null);
+    if (editingId === a.id) newAnalysis();
   };
 
   const historyPoints = useMemo(
@@ -89,15 +108,15 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
   );
   const canShowHistory = analyses.length >= 2;
 
-  // The measurement the plot + metrics describe. In "this visit" mode a valid
-  // live R/Xc entry previews immediately; otherwise the selected stored visit.
+  // The plot/metrics describe the current form entry (live), in "this visit".
   const liveValid = rVal !== null && rVal > 0 && xcVal !== null && xcVal > 0;
-  const displayMeasure =
-    view === "visit" && liveValid
-      ? { r: rVal as number, xc: xcVal as number, dateLabel: `${formatDate(date)} (non salvata)` }
-      : selected
-        ? { r: selected.r, xc: selected.xc, dateLabel: formatDate(selected.date) }
-        : null;
+  const displayMeasure = liveValid
+    ? {
+        r: rVal as number,
+        xc: xcVal as number,
+        dateLabel: editingId ? formatDate(date) : `${formatDate(date)} (non salvata)`,
+      }
+    : null;
 
   const result = useMemo(() => {
     if (!displayMeasure) return null;
@@ -134,7 +153,12 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
       </div>
 
       <div className="new-analysis no-print">
-        <h3 className="subhead">Nuova analisi</h3>
+        <div className="subhead-row">
+          <h3 className="subhead">{editingId ? "Modifica analisi" : "Nuova analisi"}</h3>
+          <button className="btn-link" onClick={newAnalysis}>
+            + Nuova analisi
+          </button>
+        </div>
         <div className="grid">
           <label>
             Data
@@ -162,7 +186,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
         )}
         <div className="form-actions">
           <button className="btn" disabled={!canSave} onClick={() => void save()}>
-            {saving ? "Salvataggio…" : "Salva analisi"}
+            {saving ? "Salvataggio…" : editingId ? "Aggiorna analisi" : "Salva analisi"}
           </button>
         </div>
       </div>
@@ -172,8 +196,8 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
           <h3 className="subhead">Analisi registrate</h3>
           <ul>
             {[...analyses].reverse().map((a) => (
-              <li key={a.id} className={a.id === selected?.id ? "active" : ""}>
-                <button className="visit-item" onClick={() => setSelectedId(a.id)}>
+              <li key={a.id} className={a.id === editingId ? "active" : ""}>
+                <button className="visit-item" onClick={() => loadAnalysis(a)}>
                   <span className="visit-date">{formatDate(a.date)}</span>
                   <span className="muted small">
                     R {a.r} · Xc {a.xc}

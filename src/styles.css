@@ -286,6 +286,39 @@ body {
   text-decoration: none;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  font: inherit;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.tab:hover:not(:disabled) {
+  color: var(--ink);
+}
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.trend-caption {
+  margin: 0 0 8px;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -480,6 +513,10 @@ select:focus {
   font-size: 11px;
   font-weight: 600;
   fill: var(--accent-ink);
+}
+.rxc-plot .point-label-faint {
+  font-weight: 500;
+  fill: var(--muted);
 }
 
 .result-grid {

@@ -29,6 +29,7 @@ interface Props {
 export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Props) {
   const { analyses } = useAnalyses(uid, patient.id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"visit" | "history">("visit");
 
   // New-analysis form.
   const [date, setDate] = useState(todayISO());
@@ -76,6 +77,17 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
     await deleteAnalysis(uid, patient.id, a.id);
     if (selectedId === a.id) setSelectedId(null);
   };
+
+  const historyPoints = useMemo(
+    () =>
+      analyses.map((a) => ({
+        rh: a.r / hMeters,
+        xch: a.xc / hMeters,
+        label: formatDate(a.date),
+      })),
+    [analyses, hMeters],
+  );
+  const canShowHistory = analyses.length >= 2;
 
   const result = useMemo(() => {
     if (!selected) return null;
@@ -169,7 +181,33 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
         </div>
       )}
 
-      <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
+      <div className="tabs no-print">
+        <button
+          className={`tab ${view === "visit" ? "active" : ""}`}
+          onClick={() => setView("visit")}
+        >
+          Questa visita
+        </button>
+        <button
+          className={`tab ${view === "history" ? "active" : ""}`}
+          onClick={() => setView("history")}
+          disabled={!canShowHistory}
+          title={canShowHistory ? undefined : "Servono almeno due analisi"}
+        >
+          Andamento
+        </button>
+      </div>
+
+      {view === "history" && canShowHistory ? (
+        <>
+          <p className="muted small trend-caption">
+            {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena).
+          </p>
+          <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
+        </>
+      ) : (
+        <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
+      )}
 
       {result && selected ? (
         <div className="results">

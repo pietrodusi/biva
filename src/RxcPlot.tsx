@@ -1,8 +1,18 @@
 import { LEVELS, ellipsePoints, eigenSym2, covariance, type RefParams, type Vector } from "./biva";
 
+/** A point on the trajectory (history mode), with an optional text label. */
+export interface PlotPoint {
+  rh: number;
+  xch: number;
+  label?: string;
+}
+
 interface Props {
   ref95: RefParams;
-  point: Vector | null;
+  /** Single highlighted point (this-visit mode). */
+  point?: Vector | null;
+  /** Ordered trajectory oldest -> newest (history mode). */
+  points?: PlotPoint[];
   sexLabel: string;
 }
 
@@ -32,7 +42,8 @@ const W = 640;
 const H = 520;
 const M = { top: 24, right: 24, bottom: 56, left: 64 };
 
-export function RxcPlot({ ref95, point, sexLabel }: Props) {
+export function RxcPlot({ ref95, point, points, sexLabel }: Props) {
+  const traj = points && points.length > 0 ? points : null;
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
 
@@ -50,9 +61,13 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
   // ~520 Ω/m on R/H).
   const xs = ellipses[2].pts.map((p) => p[0]);
   const ys = ellipses[2].pts.map((p) => p[1]);
-  if (point) {
-    xs.push(point.rh);
-    ys.push(point.xch);
+  // Include every plotted point so the frame never clips a patient vector.
+  const framePts: Array<{ rh: number; xch: number }> = [];
+  if (traj) framePts.push(...traj);
+  if (point) framePts.push(point);
+  for (const p of framePts) {
+    xs.push(p.rh);
+    ys.push(p.xch);
   }
   const xMin = Math.min(100, Math.floor(Math.min(...xs) / 100) * 100);
   const xMax = Math.max(500, Math.ceil(Math.max(...xs) / 100) * 100);
@@ -201,8 +216,8 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
       {/* Reference mean marker */}
       <circle cx={sx(ref95.meanRH)} cy={sy(ref95.meanXcH)} r={2.5} fill="#475569" />
 
-      {/* Patient vector */}
-      {point && (
+      {/* Patient vector (single, this-visit mode) */}
+      {!traj && point && (
         <g>
           <circle
             cx={sx(point.rh)}
@@ -215,6 +230,54 @@ export function RxcPlot({ ref95, point, sexLabel }: Props) {
           <text x={sx(point.rh) + 9} y={sy(point.xch) - 8} className="point-label">
             {point.rh.toFixed(1)}, {point.xch.toFixed(1)}
           </text>
+        </g>
+      )}
+
+      {/* Patient trajectory (history mode): oldest -> newest, faded -> solid. */}
+      {traj && (
+        <g>
+          {traj.length > 1 && (
+            <path
+              d={traj
+                .map((p, i) => `${i === 0 ? "M" : "L"}${sx(p.rh).toFixed(2)},${sy(p.xch).toFixed(2)}`)
+                .join(" ")}
+              fill="none"
+              stroke="#1d4ed8"
+              strokeWidth={1.5}
+              strokeOpacity={0.55}
+            />
+          )}
+          {traj.map((p, i) => {
+            const t = traj.length === 1 ? 1 : i / (traj.length - 1);
+            const isLast = i === traj.length - 1;
+            return (
+              <circle
+                key={i}
+                cx={sx(p.rh)}
+                cy={sy(p.xch)}
+                r={isLast ? 6 : 4}
+                fill="#1d4ed8"
+                fillOpacity={0.35 + 0.65 * t}
+                stroke="#ffffff"
+                strokeWidth={isLast ? 1.5 : 1}
+              />
+            );
+          })}
+          {/* Label the endpoints so the direction of travel is unambiguous. */}
+          {traj.length > 1 && traj[0].label && (
+            <text x={sx(traj[0].rh) + 9} y={sy(traj[0].xch) - 8} className="point-label point-label-faint">
+              {traj[0].label}
+            </text>
+          )}
+          {traj[traj.length - 1].label && (
+            <text
+              x={sx(traj[traj.length - 1].rh) + 9}
+              y={sy(traj[traj.length - 1].xch) - 8}
+              className="point-label"
+            >
+              {traj[traj.length - 1].label}
+            </text>
+          )}
         </g>
       )}
 

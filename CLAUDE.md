@@ -47,6 +47,8 @@ src/
   firebase.ts    Firebase app init; exports `auth` + `db` (config via env).
   auth.tsx       Auth context: `useAuth()` (user, loading, sign in/out).
   AuthGate.tsx   Sign-in screen; renders the app only once signed in.
+  data.ts        Firestore data layer (load/save helpers + hooks). Phase 1:
+                 `useGlobalSettings()` persists the device-param overrides.
   main.tsx       React entry — wraps App in AuthProvider + AuthGate.
   styles.css     All styling, including the @media print rules.
 ```
@@ -110,6 +112,13 @@ The deploy workflow injects `VITE_FIREBASE_*` from GitHub Actions **secrets**
 (Settings → Secrets and variables → Actions) into the `npm run build` step. For
 Google sign-in to work on the live site, `pietrodusi.github.io` must be added to
 the Firebase project's **Authentication → Settings → Authorized domains**.
+
+**Firestore (Phase 1+).** Data lives per account under `users/{uid}/...`. The
+global device-param overrides are at `users/{uid}/settings/global`
+(`{ referenceOverrides: { "<datasetId>:<sex>": RefParams }, updatedAt }`).
+Firestore must be enabled in the console, and `firestore.rules` (per-UID access)
+published via the console Rules tab or the Firebase CLI. The full multi-phase
+plan (patients, dated analyses, history graph) is in `ROADMAP.md`.
 
 ## Local-tooling gotchas (Windows)
 

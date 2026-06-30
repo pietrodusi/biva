@@ -199,6 +199,13 @@ select:focus {
   border-radius: 6px;
 }
 
+.save-status {
+  margin: 8px 0 0;
+}
+.save-error {
+  color: var(--err-ink);
+}
+
 .source-note {
   font-size: 0.82rem;
   background: #f8fafc;

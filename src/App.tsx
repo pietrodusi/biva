@@ -17,6 +17,7 @@ import {
 } from "./references";
 import { RxcPlot } from "./RxcPlot";
 import { useAuth } from "./auth";
+import { useGlobalSettings } from "./data";
 import "./styles.css";
 
 type HeightUnit = "cm" | "m";
@@ -49,9 +50,10 @@ export default function App() {
   const [height, setHeight] = useState("");
   const [heightUnit, setHeightUnit] = useState<HeightUnit>("cm");
 
-  // Per (dataset, sex) overrides of the published reference values. Editing a
-  // field stores an override; "Reset to study values" clears it.
-  const [overrides, setOverrides] = useState<Record<string, RefParams>>({});
+  // Per (dataset, sex) overrides of the published reference values, persisted to
+  // the account (global device tuning). Editing a field stores an override;
+  // "Reset to study values" clears it. Saved automatically (debounced).
+  const { overrides, setOverrides, saveStatus } = useGlobalSettings(user?.uid);
 
   const refSet = getReferenceSet(setId);
   const overrideKey = `${setId}:${sex}`;
@@ -224,6 +226,15 @@ export default function App() {
               </button>
             )}
           </div>
+          <p className={`save-status small ${saveStatus === "error" ? "save-error" : "muted"}`}>
+            {saveStatus === "saving"
+              ? "Salvataggio…"
+              : saveStatus === "saved"
+                ? "✓ Salvato nel tuo account"
+                : saveStatus === "error"
+                  ? "⚠ Salvataggio non riuscito — riprova"
+                  : "I parametri sono salvati automaticamente nel tuo account."}
+          </p>
 
           <p className="caveat">
             ⚠ Il set di riferimento deve corrispondere al dispositivo e al protocollo BIA utilizzati. I

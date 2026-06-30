@@ -524,9 +524,12 @@ select:focus {
   font-weight: 600;
   fill: var(--accent-ink);
 }
-.rxc-plot .point-label-faint {
-  font-weight: 500;
-  fill: var(--muted);
+/* White halo so the hovered date stays legible over lines/ellipses. */
+.rxc-plot .point-label-hover {
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .result-grid {

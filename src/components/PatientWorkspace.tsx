@@ -213,7 +213,8 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
       {view === "history" && canShowHistory ? (
         <>
           <p className="muted small trend-caption">
-            {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena).
+            {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena). Passa il
+            mouse su un punto per vederne la data.
           </p>
           <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
         </>

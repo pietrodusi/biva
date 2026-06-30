@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { LEVELS, ellipsePoints, eigenSym2, covariance, type RefParams, type Vector } from "./biva";
 
 /** A point on the trajectory (history mode), with an optional text label. */
@@ -44,6 +45,8 @@ const M = { top: 24, right: 24, bottom: 56, left: 64 };
 
 export function RxcPlot({ ref95, point, points, sexLabel }: Props) {
   const traj = points && points.length > 0 ? points : null;
+  // Index of the trajectory point currently hovered (its date shows as a label).
+  const [hovered, setHovered] = useState<number | null>(null);
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
 
@@ -269,31 +272,34 @@ export function RxcPlot({ ref95, point, points, sexLabel }: Props) {
             const t = traj.length === 1 ? 1 : i / (traj.length - 1);
             const isLast = i === traj.length - 1;
             return (
-              <circle
+              <g
                 key={i}
-                cx={sx(p.rh)}
-                cy={sy(p.xch)}
-                r={isLast ? 6 : 4}
-                fill="#1d4ed8"
-                fillOpacity={0.35 + 0.65 * t}
-                stroke="#ffffff"
-                strokeWidth={isLast ? 1.5 : 1}
-              />
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered((h) => (h === i ? null : h))}
+                style={{ cursor: "pointer" }}
+              >
+                {/* Generous transparent hit target for the small marker. */}
+                <circle cx={sx(p.rh)} cy={sy(p.xch)} r={11} fill="transparent" />
+                <circle
+                  cx={sx(p.rh)}
+                  cy={sy(p.xch)}
+                  r={isLast || hovered === i ? 6 : 4}
+                  fill="#1d4ed8"
+                  fillOpacity={0.35 + 0.65 * t}
+                  stroke="#ffffff"
+                  strokeWidth={isLast || hovered === i ? 1.5 : 1}
+                />
+              </g>
             );
           })}
-          {/* Label the endpoints so the direction of travel is unambiguous. */}
-          {traj.length > 1 && traj[0].label && (
-            <text x={sx(traj[0].rh) + 9} y={sy(traj[0].xch) - 8} className="point-label point-label-faint">
-              {traj[0].label}
-            </text>
-          )}
-          {traj[traj.length - 1].label && (
+          {/* Date shown only while hovering a point. */}
+          {hovered !== null && traj[hovered]?.label && (
             <text
-              x={sx(traj[traj.length - 1].rh) + 9}
-              y={sy(traj[traj.length - 1].xch) - 8}
-              className="point-label"
+              x={sx(traj[hovered].rh) + 9}
+              y={sy(traj[hovered].xch) - 8}
+              className="point-label point-label-hover"
             >
-              {traj[traj.length - 1].label}
+              {traj[hovered].label}
             </text>
           )}
         </g>

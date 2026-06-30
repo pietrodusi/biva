@@ -40,7 +40,7 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
       <div className="panel-head">
         <h2>Parametri di riferimento (dispositivo)</h2>
         <button className="btn-link" onClick={onClose}>
-          ← Torna
+          ← Indietro
         </button>
       </div>
 

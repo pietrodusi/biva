@@ -213,10 +213,9 @@ body {
    centered so the block isn't stretched edge-to-edge. */
 .workspace-cols {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 720px);
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   gap: 28px;
   align-items: start;
-  justify-content: center;
 }
 .ws-col-left,
 .ws-col-right {
@@ -226,19 +225,21 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 760px;
+  justify-self: center;
+}
+/* Separator + alignment between the patient header and the body below it. */
+.output > .panel-head {
+  margin-bottom: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 @media (max-width: 900px) {
   .workspace-cols {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-}
-
-/* Keep the workspace card from stretching edge-to-edge on wide monitors, so
-   its header aligns with the two-column body below it. */
-.panel.output {
-  max-width: 1120px;
-  margin: 0 auto;
 }
 
 /* Forms and settings read better at a constrained width. */
@@ -338,10 +339,10 @@ body {
   padding: 14px;
   margin-bottom: 16px;
 }
-/* Data / Resistenza / Reattanza fit on one line (narrower inputs); Nota wraps
-   below them via its .full span. */
+/* Data spans the first row; Resistenza + Reattanza share the second; Nota the
+   third. Collapses to one column on small screens. */
 .new-analysis .grid {
-  grid-template-columns: repeat(3, minmax(0, 220px));
+  grid-template-columns: 1fr 1fr;
 }
 @media (max-width: 680px) {
   .new-analysis .grid {
@@ -649,7 +650,6 @@ select:focus {
 .rxc-plot {
   width: 100%;
   height: auto;
-  max-width: 680px;
   margin: 0 auto;
   display: block;
 }

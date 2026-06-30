@@ -97,15 +97,17 @@ export default function App() {
         </div>
       </header>
 
-      <div className="subtitle-row">
-        <p className="subtitle">
-          Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
-          normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
-        </p>
-        <button className="btn print-btn no-print" onClick={() => window.print()}>
-          🖨 Stampa / Salva come PDF
-        </button>
-      </div>
+      {!showSettings && (
+        <div className="subtitle-row">
+          <p className="subtitle">
+            Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
+            normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
+          </p>
+          <button className="btn print-btn no-print" onClick={() => window.print()}>
+            🖨 Stampa / Salva come PDF
+          </button>
+        </div>
+      )}
 
       <main className="workspace">
         {showSettings ? (

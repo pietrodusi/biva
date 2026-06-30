@@ -164,7 +164,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
               )}
             </div>
             <div className="grid">
-              <label>
+              <label className="full">
                 Data
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </label>
@@ -241,13 +241,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
           </div>
 
           {view === "history" && canShowHistory ? (
-            <>
-              <p className="muted small trend-caption">
-                {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena). Passa
-                il mouse su un punto per vederne la data.
-              </p>
-              <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
-            </>
+            <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
           ) : (
             <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
           )}

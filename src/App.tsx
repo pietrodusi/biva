@@ -80,7 +80,7 @@ export default function App() {
         </div>
         <div className="header-right no-print">
           <button
-            className="btn-link"
+            className="btn-ghost"
             onClick={() => {
               setShowSettings(true);
               setEditing(null);
@@ -88,7 +88,9 @@ export default function App() {
           >
             ⚙ Parametri dispositivo
           </button>
-          <span className="account-user">{user?.email}</span>
+          <span className="account-user" title={user?.email ?? undefined}>
+            {user?.email}
+          </span>
           <button className="btn-link" onClick={() => void signOutUser()}>
             Esci
           </button>
@@ -129,7 +131,7 @@ export default function App() {
             onDelete={() => void removePatient(selectedPatient)}
           />
         ) : (
-          <section className="panel">
+          <section className="panel narrow empty-state">
             <p className="placeholder">
               Seleziona un paziente dal menu in alto oppure creane uno nuovo per iniziare.
             </p>

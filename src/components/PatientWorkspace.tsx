@@ -152,120 +152,128 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
         </div>
       </div>
 
-      <div className="new-analysis no-print">
-        <div className="subhead-row">
-          <h3 className="subhead">{editingId ? "Modifica analisi" : "Nuova analisi"}</h3>
-          <button className="btn-link" onClick={newAnalysis}>
-            + Nuova analisi
-          </button>
-        </div>
-        <div className="grid">
-          <label>
-            Data
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
-          <label>
-            Resistenza R (Ω)
-            <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="es. 500" />
-          </label>
-          <label>
-            Reattanza Xc (Ω)
-            <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="es. 55" />
-          </label>
-          <label className="full">
-            Nota (facoltativa)
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. a digiuno" />
-          </label>
-        </div>
-        {formErrors.length > 0 && (
-          <ul className="errors">
-            {formErrors.map((e) => (
-              <li key={e}>{e}</li>
-            ))}
-          </ul>
-        )}
-        <div className="form-actions">
-          <button className="btn" disabled={!canSave} onClick={() => void save()}>
-            {saving ? "Salvataggio…" : editingId ? "Aggiorna analisi" : "Salva analisi"}
-          </button>
-        </div>
-      </div>
-
-      {analyses.length > 0 && (
-        <details className="visit-list no-print">
-          <summary className="subhead">Analisi registrate ({analyses.length})</summary>
-          <ul>
-            {[...analyses].reverse().map((a) => (
-              <li key={a.id} className={a.id === editingId ? "active" : ""}>
-                <button className="visit-item" onClick={() => loadAnalysis(a)}>
-                  <span className="visit-date">{formatDate(a.date)}</span>
-                  <span className="muted small">
-                    R {a.r} · Xc {a.xc}
-                    {a.note ? ` · ${a.note}` : ""}
-                  </span>
+      <div className="workspace-cols">
+        <div className="ws-col-left">
+          <div className="new-analysis no-print">
+            <div className="subhead-row">
+              <h3 className="subhead">{editingId ? "Modifica analisi" : "Nuova analisi"}</h3>
+              {editingId && (
+                <button className="btn-link" onClick={newAnalysis}>
+                  + Nuova analisi
                 </button>
-                <button
-                  className="btn-link btn-danger visit-del"
-                  title="Elimina"
-                  onClick={() => void removeAnalysis(a)}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-
-      <div className="tabs no-print">
-        <button
-          className={`tab ${view === "visit" ? "active" : ""}`}
-          onClick={() => setView("visit")}
-        >
-          Questa visita
-        </button>
-        <button
-          className={`tab ${view === "history" ? "active" : ""}`}
-          onClick={() => setView("history")}
-          disabled={!canShowHistory}
-          title={canShowHistory ? undefined : "Servono almeno due analisi"}
-        >
-          Andamento
-        </button>
-      </div>
-
-      {view === "history" && canShowHistory ? (
-        <>
-          <p className="muted small trend-caption">
-            {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena). Passa il
-            mouse su un punto per vederne la data.
-          </p>
-          <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
-        </>
-      ) : (
-        <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
-      )}
-
-      {result ? (
-        <div className="results">
-          <div className="result-grid">
-            <Metric label="R/H" value={`${result.point.rh.toFixed(1)} Ω/m`} />
-            <Metric label="Xc/H" value={`${result.point.xch.toFixed(1)} Ω/m`} />
-            <Metric label="Angolo di fase" value={`${result.phase.toFixed(1)}°`} />
-            <Metric label="D di Mahalanobis" value={result.distance.toFixed(2)} />
+              )}
+            </div>
+            <div className="grid">
+              <label>
+                Data
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </label>
+              <label>
+                Resistenza R (Ω)
+                <input inputMode="decimal" value={R} onChange={(e) => setR(e.target.value)} placeholder="es. 500" />
+              </label>
+              <label>
+                Reattanza Xc (Ω)
+                <input inputMode="decimal" value={Xc} onChange={(e) => setXc(e.target.value)} placeholder="es. 55" />
+              </label>
+              <label className="full">
+                Nota (facoltativa)
+                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. a digiuno" />
+              </label>
+            </div>
+            {formErrors.length > 0 && (
+              <ul className="errors">
+                {formErrors.map((e) => (
+                  <li key={e}>{e}</li>
+                ))}
+              </ul>
+            )}
+            <div className="form-actions">
+              <button className="btn" disabled={!canSave} onClick={() => void save()}>
+                {saving ? "Salvataggio…" : editingId ? "Aggiorna analisi" : "Salva analisi"}
+              </button>
+            </div>
           </div>
-          <p className="zone">
-            <span className={`zone-badge zone-${result.zone}`}>{ZONE_LABEL[result.zone]}</span>
-          </p>
-          <p className="interpretation">{result.interpretation.text}</p>
-          <p className="print-meta">
-            {patient.name} · {patient.sex === "male" ? "Uomo" : "Donna"} · {patient.heightCm} cm · Data:{" "}
-            {result.dateLabel} · Riferimento: {refSet.label}
-          </p>
+
+          {analyses.length > 0 && (
+            <details className="visit-list no-print">
+              <summary className="subhead">Analisi registrate ({analyses.length})</summary>
+              <ul>
+                {[...analyses].reverse().map((a) => (
+                  <li key={a.id} className={a.id === editingId ? "active" : ""}>
+                    <button className="visit-item" onClick={() => loadAnalysis(a)}>
+                      <span className="visit-date">{formatDate(a.date)}</span>
+                      <span className="muted small">
+                        R {a.r} · Xc {a.xc}
+                        {a.note ? ` · ${a.note}` : ""}
+                      </span>
+                    </button>
+                    <button
+                      className="btn-link btn-danger visit-del"
+                      title="Elimina"
+                      onClick={() => void removeAnalysis(a)}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
-      ) : (
-        <p className="placeholder">Inserisci resistenza e reattanza per tracciare il vettore.</p>
-      )}
+
+        <div className="ws-col-right">
+          <div className="tabs no-print">
+            <button
+              className={`tab ${view === "visit" ? "active" : ""}`}
+              onClick={() => setView("visit")}
+            >
+              Questa visita
+            </button>
+            <button
+              className={`tab ${view === "history" ? "active" : ""}`}
+              onClick={() => setView("history")}
+              disabled={!canShowHistory}
+              title={canShowHistory ? undefined : "Servono almeno due analisi"}
+            >
+              Andamento
+            </button>
+          </div>
+
+          {view === "history" && canShowHistory ? (
+            <>
+              <p className="muted small trend-caption">
+                {analyses.length} analisi, dalla meno recente (chiara) alla più recente (piena). Passa
+                il mouse su un punto per vederne la data.
+              </p>
+              <RxcPlot ref95={ref95} points={historyPoints} sexLabel={patient.sex} />
+            </>
+          ) : (
+            <RxcPlot ref95={ref95} point={result?.point ?? null} sexLabel={patient.sex} />
+          )}
+
+          {result ? (
+            <div className="results">
+              <div className="result-grid">
+                <Metric label="R/H" value={`${result.point.rh.toFixed(1)} Ω/m`} />
+                <Metric label="Xc/H" value={`${result.point.xch.toFixed(1)} Ω/m`} />
+                <Metric label="Angolo di fase" value={`${result.phase.toFixed(1)}°`} />
+                <Metric label="D di Mahalanobis" value={result.distance.toFixed(2)} />
+              </div>
+              <p className="zone">
+                <span className={`zone-badge zone-${result.zone}`}>{ZONE_LABEL[result.zone]}</span>
+              </p>
+              <p className="interpretation">{result.interpretation.text}</p>
+              <p className="print-meta">
+                {patient.name} · {patient.sex === "male" ? "Uomo" : "Donna"} · {patient.heightCm} cm ·
+                Data: {result.dateLabel} · Riferimento: {refSet.label}
+              </p>
+            </div>
+          ) : (
+            <p className="placeholder">Inserisci resistenza e reattanza per tracciare il vettore.</p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

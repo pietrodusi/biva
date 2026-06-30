@@ -42,7 +42,7 @@ export function PatientForm({ patient, onSave, onCancel }: Props) {
   };
 
   return (
-    <section className="panel" aria-label={patient ? "Modifica paziente" : "Nuovo paziente"}>
+    <section className="panel narrow" aria-label={patient ? "Modifica paziente" : "Nuovo paziente"}>
       <div className="panel-head">
         <h2>{patient ? "Modifica paziente" : "Nuovo paziente"}</h2>
         <button className="btn-link" onClick={onCancel}>

@@ -36,7 +36,7 @@ export function GlobalSettingsPanel({ overrides, setOverrides, saveStatus, onClo
   const [sex, setSex] = useState<Sex>("male");
 
   return (
-    <section className="panel" aria-label="Impostazioni globali del dispositivo">
+    <section className="panel narrow" aria-label="Impostazioni globali del dispositivo">
       <div className="panel-head">
         <h2>Parametri di riferimento (dispositivo)</h2>
         <button className="btn-link" onClick={onClose}>

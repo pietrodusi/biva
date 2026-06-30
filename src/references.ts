@@ -61,6 +61,15 @@ export function getReferenceSet(id: string): ReferenceSet {
   return REFERENCE_SETS.find((s) => s.id === id) ?? REFERENCE_SETS[0];
 }
 
+/** Key under which a (dataset, sex) device-tuned override is stored globally. */
+export const overrideKey = (setId: string, sex: Sex): string => `${setId}:${sex}`;
+
+/** The published five params for a (dataset, sex), stripped of the `n` count. */
+export function publishedParams(setId: string, sex: Sex): RefParams {
+  const p = getReferenceSet(setId).params[sex];
+  return { meanRH: p.meanRH, meanXcH: p.meanXcH, sdRH: p.sdRH, sdXcH: p.sdXcH, r: p.r };
+}
+
 /** A further compilation the nutritionist can consult for other populations. */
 export const COMPILATION_REFERENCE = {
   citation:

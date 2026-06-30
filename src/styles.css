@@ -110,9 +110,115 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) 1fr;
+  grid-template-columns: minmax(220px, 280px) 1fr;
   gap: 20px;
   align-items: start;
+}
+
+/* The workspace column must be allowed to shrink so its plot can't push the
+   grid wider than the viewport. */
+.workspace {
+  min-width: 0;
+}
+
+/* ---------- Sidebar (patient list) ---------- */
+.sidebar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sidebar-head h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.patient-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.patient-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.patient-item:hover {
+  background: #f1f5f9;
+}
+.patient-item.active {
+  background: #eff6ff;
+  border-color: var(--accent);
+}
+.patient-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.patient-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.settings-link {
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+/* ---------- Panel header (workspace / form / settings) ---------- */
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.panel-head h2 {
+  margin: 0;
+}
+.patient-title {
+  font-size: 1.2rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--ink) !important;
+}
+.patient-subtitle {
+  margin: 2px 0 0;
+}
+.patient-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.btn-danger {
+  color: var(--err-ink);
+}
+.measurement-inputs {
+  margin-bottom: 14px;
+}
+.form-actions {
+  margin-top: 16px;
 }
 
 .panel {

@@ -9,9 +9,23 @@
  * wires them to component state with debounced write-through.
  */
 import { useEffect, useRef, useState } from "react";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "./firebase";
 import type { RefParams } from "./biva";
+import type { Sex } from "./references";
 
 export type ReferenceOverrides = Record<string, RefParams>;
 
@@ -108,4 +122,78 @@ export function useGlobalSettings(uid: string | undefined): GlobalSettings {
   }, [uid, overrides]);
 
   return { overrides, setOverrides, loading, saveStatus };
+}
+
+// --- Patients --------------------------------------------------------------
+//
+// Per-patient record (stable across visits): name, sex, height, and which
+// reference dataset applies. Lives at `users/{uid}/patients/{id}`; the dated
+// measurements live in an `analyses` subcollection (Phase 3).
+
+/** The editable fields of a patient. */
+export interface PatientData {
+  name: string;
+  sex: Sex;
+  heightCm: number;
+  referenceSetId: string;
+}
+
+/** A stored patient (its fields plus the Firestore document id). */
+export interface Patient extends PatientData {
+  id: string;
+}
+
+const patientsCol = (uid: string) => collection(db, "users", uid, "patients");
+const patientDoc = (uid: string, id: string) => doc(db, "users", uid, "patients", id);
+
+/** Live list of an account's patients, ordered by name. */
+export function usePatients(uid: string | undefined): { patients: Patient[]; loading: boolean } {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!uid) {
+      setPatients([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const q = query(patientsCol(uid), orderBy("name"));
+    return onSnapshot(
+      q,
+      (snap) => {
+        setPatients(snap.docs.map((d) => ({ id: d.id, ...(d.data() as PatientData) })));
+        setLoading(false);
+      },
+      (e) => {
+        console.error("Failed to load patients:", e);
+        setLoading(false);
+      },
+    );
+  }, [uid]);
+
+  return { patients, loading };
+}
+
+export async function createPatient(uid: string, data: PatientData): Promise<string> {
+  const ref = await addDoc(patientsCol(uid), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function updatePatient(uid: string, id: string, data: PatientData): Promise<void> {
+  await updateDoc(patientDoc(uid, id), { ...data, updatedAt: serverTimestamp() });
+}
+
+/**
+ * Delete a patient and its analyses. The client SDK can't cascade-delete a
+ * subcollection, so we remove the analyses docs first to avoid orphans.
+ */
+export async function deletePatient(uid: string, id: string): Promise<void> {
+  const analyses = await getDocs(collection(db, "users", uid, "patients", id, "analyses"));
+  await Promise.all(analyses.docs.map((d) => deleteDoc(d.ref)));
+  await deleteDoc(patientDoc(uid, id));
 }

@@ -19,7 +19,12 @@ conversions.
 ## Stack & commands
 
 Vite + React 18 + TypeScript. No UI/charting libraries — the plot is hand-drawn
-inline SVG (crisp, prints cleanly, zero deps).
+inline SVG (crisp, prints cleanly, zero deps). The only runtime dependency
+beyond React is the **Firebase** SDK (Google auth + Firestore; see ROADMAP.md).
+
+Firebase config is read from `VITE_FIREBASE_*` env vars. For local dev, copy
+`.env.example` to `.env.local` and fill it in — without it the app shows a
+"not configured" screen instead of the sign-in button (`firebaseConfigured`).
 
 ```bash
 npm install
@@ -39,9 +44,14 @@ src/
   references.ts  The real, sourced reference datasets (data only).
   RxcPlot.tsx    Presentational SVG plot. Props in, SVG out, no state.
   App.tsx        All UI + state: inputs, validation, wiring, results, print.
-  main.tsx       React entry.
+  firebase.ts    Firebase app init; exports `auth` + `db` (config via env).
+  auth.tsx       Auth context: `useAuth()` (user, loading, sign in/out).
+  AuthGate.tsx   Sign-in screen; renders the app only once signed in.
+  main.tsx       React entry — wraps App in AuthProvider + AuthGate.
   styles.css     All styling, including the @media print rules.
 ```
+
+The UI is in Italian (`<html lang="it">`); it is the only language.
 
 Data flow is one-directional: `App` holds state → derives the patient `Vector`
 and active `RefParams` → calls `biva.ts` for results and passes them to
@@ -95,6 +105,11 @@ angle differ by device brand and supine-vs-standing protocol.
 Push to `main` → `.github/workflows/deploy.yml` builds and publishes `dist/` to
 GitHub Pages. Vite `base` is `/biva/` for production (`/` in dev) — keep this in
 sync with the repo name; if the repo is renamed, update `vite.config.ts`.
+
+The deploy workflow injects `VITE_FIREBASE_*` from GitHub Actions **secrets**
+(Settings → Secrets and variables → Actions) into the `npm run build` step. For
+Google sign-in to work on the live site, `pietrodusi.github.io` must be added to
+the Firebase project's **Authentication → Settings → Authorized domains**.
 
 ## Local-tooling gotchas (Windows)
 

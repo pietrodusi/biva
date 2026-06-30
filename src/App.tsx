@@ -16,6 +16,7 @@ import {
   type Sex,
 } from "./references";
 import { RxcPlot } from "./RxcPlot";
+import { useAuth } from "./auth";
 import "./styles.css";
 
 type HeightUnit = "cm" | "m";
@@ -38,6 +39,8 @@ function num(s: string): number | null {
 }
 
 export default function App() {
+  const { user, signOutUser } = useAuth();
+
   const [sex, setSex] = useState<Sex>("male");
   const [setId, setSetId] = useState<string>(DEFAULT_SET_ID);
 
@@ -119,6 +122,13 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="account-bar no-print">
+        <span className="account-user">{user?.email}</span>
+        <button className="btn-link" onClick={() => void signOutUser()}>
+          Esci
+        </button>
+      </div>
+
       <header className="app-header">
         <h1>Grafico R-Xc BIVA</h1>
         <p className="subtitle">

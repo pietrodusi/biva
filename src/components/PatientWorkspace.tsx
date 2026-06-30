@@ -192,8 +192,8 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
       </div>
 
       {analyses.length > 0 && (
-        <div className="visit-list no-print">
-          <h3 className="subhead">Analisi registrate</h3>
+        <details className="visit-list no-print">
+          <summary className="subhead">Analisi registrate ({analyses.length})</summary>
           <ul>
             {[...analyses].reverse().map((a) => (
               <li key={a.id} className={a.id === editingId ? "active" : ""}>
@@ -214,7 +214,7 @@ export function PatientWorkspace({ uid, patient, ref95, onEdit, onDelete }: Prop
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
 
       <div className="tabs no-print">

@@ -88,9 +88,6 @@ export default function App() {
           >
             ⚙ Parametri dispositivo
           </button>
-          <button className="btn-link" onClick={() => window.print()}>
-            🖨 Stampa
-          </button>
           <span className="account-user">{user?.email}</span>
           <button className="btn-link" onClick={() => void signOutUser()}>
             Esci
@@ -98,10 +95,15 @@ export default function App() {
         </div>
       </header>
 
-      <p className="subtitle">
-        Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
-        normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
-      </p>
+      <div className="subtitle-row">
+        <p className="subtitle">
+          Analisi vettoriale dell'impedenza bioelettrica — traccia il vettore di impedenza
+          normalizzato per l'altezza rispetto alle ellissi di tolleranza del 50 / 75 / 95%.
+        </p>
+        <button className="btn print-btn no-print" onClick={() => window.print()}>
+          🖨 Stampa / Salva come PDF
+        </button>
+      </div>
 
       <main className="workspace">
         {showSettings ? (

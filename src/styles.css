@@ -108,8 +108,19 @@ body {
   color: var(--muted);
 }
 
+.subtitle-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.subtitle-row .print-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .subtitle {
-  margin: 0 0 16px;
+  margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
   max-width: 72ch;
@@ -282,9 +293,26 @@ body {
   padding: 14px;
   margin-bottom: 16px;
 }
+/* Data / Resistenza / Reattanza fit on one line (narrower inputs); Nota wraps
+   below them via its .full span. */
+.new-analysis .grid {
+  grid-template-columns: repeat(3, minmax(0, 220px));
+}
+@media (max-width: 680px) {
+  .new-analysis .grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 .visit-list {
   margin-bottom: 16px;
+}
+.visit-list > summary {
+  cursor: pointer;
+  margin: 0;
+}
+.visit-list[open] > summary {
+  margin-bottom: 10px;
 }
 .visit-list ul {
   list-style: none;
@@ -687,6 +715,10 @@ select:focus {
   }
   .panel {
     padding: 14px;
+  }
+  .subtitle-row {
+    flex-direction: column;
+    align-items: stretch;
   }
   .print-btn {
     width: 100%;
